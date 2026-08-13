@@ -19,6 +19,10 @@ packages:
   # Deploy root of the single-exe build: a pure dependency manifest whose
   # closure is what the exe bundles and what the Python runtime distributes.
   - python/sdk-runtime
+  # Deploy root of the macOS bundled web-host: a pure dependency manifest
+  # whose closure is what pkg --sea packs into dsh-web-host. Not a release
+  # member (two path segments under apps/).
+  - apps/macos/web-host
 
 # Vendored framework packages keep their upstream semver ranges, while local
 # builds must resolve those matching names to this workspace's pinned sources.

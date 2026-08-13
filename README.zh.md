@@ -36,7 +36,7 @@ pnpm dsh web
 
 ### 运行 macOS 应用
 
-在 macOS 14+ / Apple Silicon 上，完成上面的源码步骤后，打开 [`apps/macos/DeepSeekHarness.xcodeproj`](apps/macos/README.md) 并 Run。窗口会在 loopback 上启动 `dsh web`，并显示同一套 Web UI。
+在 macOS 14+ / Apple Silicon 上，打开 [`apps/macos/DeepSeekHarness.xcodeproj`](apps/macos/README.md) 并 Run。窗口会在 loopback 上启动 `web` profile，并显示同一套 Web UI。`.app` 内打包的 `dsh-web-host` 不再要求系统安装 Node。
 
 ## 社区与支持
 

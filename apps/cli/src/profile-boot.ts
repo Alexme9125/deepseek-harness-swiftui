@@ -83,6 +83,16 @@ export function resolveTelemetryPatch(disabledEnv: string | undefined, hasRow: b
 }
 
 /**
+ * Whether this install lives inside pkg's snapshot VFS. Disk symlinks cannot
+ * target those paths, so the profiles/node_modules fallback must not run.
+ * @param installAnchor - absolute path of the dsh app's package.json.
+ * @returns true when the anchor is inside `/snapshot/`.
+ */
+export function isSnapshotInstall(installAnchor: string = INSTALL_ANCHOR): boolean {
+  return installAnchor.includes('/snapshot/') || installAnchor.includes('\\snapshot\\')
+}
+
+/**
  * Load a resolved profile for `name`: heal the shared module fallback, then
  * (re)write the empty root config. The root is always rewritten: the whole
  * composition is patch layers, and the vendored Loader's tree write-back (a
@@ -93,10 +103,17 @@ export function resolveTelemetryPatch(disabledEnv: string | undefined, hasRow: b
  * on the same file, so both compose over the identical base).
  * @param name - the profile name.
  * @param userLayer - `false` skips parsing `cordis.patch.yml` (the default dump).
+ * @param options - `healFallback: false` skips the disk module fallback (closed packaged runtimes).
  * @returns the loaded profile.
  */
-export function prepareProfile(name: string, userLayer = true): Profile {
-  healProfilesModuleFallback(INSTALL_ANCHOR)
+export function prepareProfile(
+  name: string,
+  userLayer = true,
+  options?: { healFallback?: boolean },
+): Profile {
+  if (options?.healFallback !== false && !isSnapshotInstall()) {
+    healProfilesModuleFallback(INSTALL_ANCHOR)
+  }
   const profile = loadProfile(NAME, name, INSTALL_ANCHOR, undefined, { userLayer })
   writeFileSync(join(profile.dir, PROFILE_ROOT_FILENAME), PROFILE_ROOT_CONFIG)
   return profile
@@ -137,13 +154,15 @@ function allPatches(composed: ComposedProfile): PatchOptions[] {
  * then the telemetry switch.
  * @param name - the profile name.
  * @param patchFiles - `--patch` overlay paths, in argv order.
+ * @param healFallback - when false, skip the disk `$DSH_HOME/profiles/node_modules` fallback.
  * @returns the profile, its patch layers, and the composed row index.
  */
 function composeProfile(
   name: string,
   patchFiles: readonly string[],
+  healFallback = true,
 ): ComposedProfile {
-  const profile = prepareProfile(name)
+  const profile = prepareProfile(name, true, { healFallback })
   const homePatches = loadOptionalPatches(NAME, homePatchPath()) ?? []
   const overlays = patchFiles.flatMap(file => loadOverlayPatches(NAME, resolve(file)))
   const bundlePatches = profile.layers.flatMap(layer => layer.patches)
@@ -180,6 +199,15 @@ export interface RunProfileOptions {
   patchFiles: readonly string[]
   /** The invocation's inner arguments, handed to the tree through `ctx.cmdlineArgs`. */
   args: readonly string[]
+  /**
+   * Installed-host base for bare package names. The packaged web-host passes
+   * `import.meta.url` so Loader resolves from the closed tree (the pkg VFS or
+   * a deployed `node_modules`) instead of the on-disk profile directory.
+   * When set, {@link healProfilesModuleFallback} is skipped: those symlinks
+   * cannot point into a snapshot VFS, and the closed set does not install
+   * out-of-tree profile plugins.
+   */
+  bareModuleBaseUrl?: string
 }
 
 /**
@@ -201,11 +229,16 @@ function suppressShutdownError(ctx: Context, signal: AbortSignal, error: unknown
 /**
  * Boot one profile invocation end to end and leave process lifetime to the
  * mounted plugins (or to a one-shot runner the composition mounts).
- * @param options - environment snapshot, profile name, overlays, and the booted app's own arguments.
+ * @param options - environment snapshot, profile name, overlays, the booted
+ *   app's own arguments, and an optional closed-runtime module base.
  * @returns the settled root context and the shutdown controller.
  */
 export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Context; shutdown: ProcessShutdown }> {
-  const composed = composeProfile(options.profile, options.patchFiles)
+  const composed = composeProfile(
+    options.profile,
+    options.patchFiles,
+    options.bareModuleBaseUrl === undefined,
+  )
   const app: { current?: Context } = {}
   const shutdown = createProcessShutdown(async () => { await app.current?.fiber.dispose() })
   const signalShutdown = new AbortController()
@@ -256,7 +289,7 @@ export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Con
       args: options.args,
       exit: code => void shutdown.shutdown(code),
     })
-  })
+  }, options.bareModuleBaseUrl)
   app.current = ctx
   // A surface can dispose the whole tree while boot or this post-boot watcher
   // setup is still in flight — a signal, or a fast one-shot's appExit. Loader

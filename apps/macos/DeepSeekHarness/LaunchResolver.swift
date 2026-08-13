@@ -40,7 +40,7 @@ enum LaunchResolver {
       """
       Could not find a DeepSeek Harness runtime.
       Set DSH_BIN to a `dsh` executable, set DSH_REPO to this checkout, or put `dsh` and Node 24 on your PATH.
-      From this repository run `pnpm install` and `pnpm run build` before launching the app.
+      From this repository run `pnpm install` and `pnpm run build`, then `pnpm run build:macos-web-host` to embed `dsh-web-host`.
       """
     )
   }
