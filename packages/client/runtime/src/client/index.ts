@@ -11,6 +11,7 @@ import { SlotRegistry } from './slots.ts'
 import { SessionRuntime } from './sessions/service.ts'
 import type { SessionListState } from './sessions/service.ts'
 import { WorkspaceRuntime } from './workspaces/service.ts'
+import { installNativeCommandListener } from './native-command.ts'
 import type { ConversationSnapshot } from './sessions/conversation.ts'
 import type { UseProjection } from './sessions/projection-store.ts'
 import { ConversationEventRegistry } from './conversation/event-registry.ts'
@@ -200,6 +201,10 @@ export function apply(ctx: Context): void {
   ctx.effect(
     () => workspaces.startInitialSelection(),
     'runtime: initial Workspace selection',
+  )
+  ctx.effect(
+    () => installNativeCommandListener(workspaces),
+    'runtime: native command listener',
   )
   const loop = connection.start({
     onMuxEnvelope: (envelope) => {

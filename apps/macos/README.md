@@ -4,7 +4,7 @@ English | [中文](README.zh.md)
 
 SwiftUI product window for DeepSeek Harness. The app launches the existing `web` profile as a child process on `127.0.0.1` and loads that origin in WKWebView. It does not reimplement the Web client. Decision record: [SwiftUI macOS shell](../../.agents/notes/proposed/architecture/2026-08-13-swiftui-mac-shell.md).
 
-This checkout is the Phase-1 shell: you still need Node 24 and a built frontend on the same machine. A later phase copies a bundled web-host executable into the app.
+This checkout still needs Node 24 and a built frontend on the same machine. A later change copies a bundled web-host executable into the app.
 
 ## Prerequisites
 
@@ -34,7 +34,7 @@ The shell uses the first match:
 | Order | Source | Invocation |
 |---|---|---|
 | 1 | `DSH_BIN` | `<DSH_BIN> web --host 127.0.0.1 --port <n>` |
-| 2 | Bundled `dsh-web-host` (absent in Phase 1) | same argv |
+| 2 | Bundled `dsh-web-host` (absent until a later change copies one in) | same argv |
 | 3 | `DSH_REPO`, compile-time checkout, or cwd containing `apps/cli/src/bin.ts` | `node --import tsx/esm apps/cli/src/bin.ts web --host 127.0.0.1 --port <n>` |
 | 4 | `dsh` on a PATH that includes the login-shell PATH, `/opt/homebrew/bin`, and `/usr/local/bin` | `dsh web --host 127.0.0.1 --port <n>` |
 
@@ -48,8 +48,20 @@ Optional environment variables, set in the scheme or the launching shell:
 
 The WebView opens `http://127.0.0.1:<n>/`, not `localhost`. Quit sends SIGTERM, then SIGKILL.
 
+## Native chrome
+
+The File menu sends same-origin commands into the loaded Web client (`dsh-native-command` / `window.__dshNativeInvoke`). Decision record: [SwiftUI macOS shell](../../.agents/notes/proposed/architecture/2026-08-13-swiftui-mac-shell.md#native-command-contract).
+
+| Action | Shortcut | Effect |
+|---|---|---|
+| New Session | ⌘N | `workspaces.startSession()` |
+| Add Workspace… | ⌘O | `NSOpenPanel` (directories only), then `workspaces.create` and `startSession` |
+| Settings… | ⌘, | Opens the existing settings modal |
+
+Dropping a folder on the Dock icon, the window, or a `file://` navigation into the WebView uses the same add-workspace command. The product window restores its last frame from `UserDefaults` when that frame is at least 960×640.
+
 ## Limits
 
 - App Sandbox is off so the child can read workspace directories and `$DSH_HOME`.
-- Intel Macs and a self-contained `.app` without Node are out of this phase.
+- Intel Macs and a self-contained `.app` without Node are out of this checkout.
 - Linux CI does not compile this project.

@@ -4,7 +4,7 @@
 
 DeepSeek Harness 的 SwiftUI 产品窗口。应用把现有 `web` profile 作为 `127.0.0.1` 上的子进程启动，并在 WKWebView 中加载该源。它不重实现 Web 客户端。决策记录：[SwiftUI macOS 壳](../../.agents/notes/proposed/architecture/2026-08-13-swiftui-mac-shell.md)。
 
-本 checkout 是第 1 期壳：同一台机器上仍需要 Node 24 和已构建的前端。后续阶段会把打包的 web-host 可执行文件复制进应用。
+本 checkout 在同一台机器上仍需要 Node 24 和已构建的前端。后续改动会把打包的 web-host 可执行文件复制进应用。
 
 ## 前置条件
 
@@ -34,7 +34,7 @@ xcodebuild -scheme DeepSeekHarness -configuration Debug -destination 'platform=m
 | 顺序 | 来源 | 调用 |
 |---|---|---|
 | 1 | `DSH_BIN` | `<DSH_BIN> web --host 127.0.0.1 --port <n>` |
-| 2 | 捆绑的 `dsh-web-host`（第 1 期不存在） | 相同 argv |
+| 2 | 捆绑的 `dsh-web-host`（直到后续改动复制进来之前都不存在） | 相同 argv |
 | 3 | `DSH_REPO`、编译期 checkout、或包含 `apps/cli/src/bin.ts` 的 cwd | `node --import tsx/esm apps/cli/src/bin.ts web --host 127.0.0.1 --port <n>` |
 | 4 | 包含 login-shell PATH、`/opt/homebrew/bin` 和 `/usr/local/bin` 的 PATH 上的 `dsh` | `dsh web --host 127.0.0.1 --port <n>` |
 
@@ -48,8 +48,20 @@ xcodebuild -scheme DeepSeekHarness -configuration Debug -destination 'platform=m
 
 WebView 打开 `http://127.0.0.1:<n>/`，而不是 `localhost`。退出时发送 SIGTERM，然后 SIGKILL。
 
+## 原生窗口控件
+
+File 菜单向已加载的 Web 客户端发送同源命令（`dsh-native-command` / `window.__dshNativeInvoke`）。决策记录：[SwiftUI macOS 壳](../../.agents/notes/proposed/architecture/2026-08-13-swiftui-mac-shell.md#native-command-contract)。
+
+| 操作 | 快捷键 | 效果 |
+|---|---|---|
+| New Session | ⌘N | `workspaces.startSession()` |
+| Add Workspace… | ⌘O | `NSOpenPanel`（仅目录），然后 `workspaces.create` 与 `startSession` |
+| Settings… | ⌘, | 打开现有的设置模态 |
+
+把文件夹拖到 Dock 图标、窗口，或把 `file://` 导航送进 WebView，都使用同一条 add-workspace 命令。产品窗口会在上次保存的窗口矩形至少为 960×640 时从 `UserDefaults` 恢复它。
+
 ## 限制
 
 - App Sandbox 关闭，以便子进程能读取 workspace 目录和 `$DSH_HOME`。
-- Intel Mac 以及不带 Node 的自包含 `.app` 不属于本阶段。
+- Intel Mac 以及不带 Node 的自包含 `.app` 不属于本 checkout。
 - Linux CI 不编译此工程。

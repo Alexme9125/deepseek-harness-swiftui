@@ -153,4 +153,13 @@ describe('runtime client apply', () => {
     expect(bench.stopped).toBe(1)
     void fiber
   })
+
+  it('installs __dshNativeInvoke for the macOS shell and removes it on dispose', async () => {
+    const host = globalThis as { __dshNativeInvoke?: (detail: unknown) => Promise<{ ok: boolean }> }
+    const bench = await mount()
+    expect(typeof host.__dshNativeInvoke).toBe('function')
+    await expect(host.__dshNativeInvoke?.({ name: 'new-session' })).resolves.toEqual({ ok: true })
+    await bench.ctx.fiber.dispose()
+    expect(host.__dshNativeInvoke).toBeUndefined()
+  })
 })
