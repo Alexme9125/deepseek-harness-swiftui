@@ -267,3 +267,28 @@ describe('SettingsPanel navigation', () => {
     expect(listeners.size).toBe(0)
   })
 })
+
+describe('SettingsRoot native command', () => {
+  it('opens the panel on dsh-native-command open-settings and ignores other names', () => {
+    mount()
+    act(() => {
+      window.dispatchEvent(new Event('dsh-native-command'))
+      window.dispatchEvent(new CustomEvent('dsh-native-command', { detail: { name: 'new-session' } }))
+      window.dispatchEvent(new CustomEvent('dsh-native-command', { detail: null }))
+    })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    act(() => {
+      window.dispatchEvent(new CustomEvent('dsh-native-command', { detail: { name: 'open-settings' } }))
+    })
+    expect(screen.getByRole('dialog')).toBeTruthy()
+  })
+
+  it('unhooks the native-command listener on unmount', () => {
+    const { view } = mount()
+    view.unmount()
+    act(() => {
+      window.dispatchEvent(new CustomEvent('dsh-native-command', { detail: { name: 'open-settings' } }))
+    })
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})

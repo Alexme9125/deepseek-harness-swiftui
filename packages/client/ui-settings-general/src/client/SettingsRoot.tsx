@@ -115,6 +115,19 @@ export function SettingsRoot(props: SettingsRootComponentProps) {
     setOpen(true)
   }, [])
 
+  // The macOS shell opens this modal with `dsh-native-command` / `open-settings`.
+  // Modal open state stays component-local; there is no public window API.
+  useEffect(() => {
+    const onCommand = (event: Event) => {
+      const detail = event instanceof CustomEvent ? event.detail : undefined
+      if (typeof detail === 'object' && detail !== null && 'name' in detail && detail.name === 'open-settings') {
+        setOpen(true)
+      }
+    }
+    window.addEventListener('dsh-native-command', onCommand)
+    return () => window.removeEventListener('dsh-native-command', onCommand)
+  }, [])
+
   // The ledger tick keeps the nav rows fresh: registrants re-register with
   // freshly localized text on locale change, and the trigger/header/close
   // seats re-render through their own outlets' subscriptions.
