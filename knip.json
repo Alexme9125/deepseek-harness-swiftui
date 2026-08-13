@@ -729,7 +729,6 @@
     },
     "apps/cli": {
       "entry": [
-        "src/bin.ts",
         "src/packaged-bin.ts",
         "tests/**/*.spec.ts",
         "tests/**/*.e2e.ts",
