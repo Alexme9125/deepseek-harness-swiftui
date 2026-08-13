@@ -147,3 +147,13 @@ Docs accompany every code change: update affected README and JSDoc contracts tog
 ## Vendoring policy
 
 `vendor/` packages are pinned source copies (manifest with upstream SHAs in [vendor/README.md](vendor/README.md)). Update via the sync procedure there; re-apply or retire the logged local modifications; rerun `pnpm run test && pnpm run build`.
+
+## Cursor Cloud specific instructions
+
+These notes cover this cloud VM only; the standard scripts live under [Commands](#commands).
+
+- **Node comes from nvm, not `/exec-daemon/node`.** The VM's default `node` on a bare `PATH` is 22.14, below the `^22.19 || >=24` engine floor. The agent's `~/.bashrc` prepends nvm's Node 24 and enables Corepack (pnpm 11.7.0), so login shells resolve the right `node`/`pnpm`. A command that reports Node 22.14 ran in a shell that did not source `~/.bashrc`; re-run it through a login shell.
+- **`CI=true` is exported in `~/.bashrc` and is required here.** The root `postinstall` installs Lefthook hooks but refuses to replace Cursor's managed `core.hooksPath`, failing `pnpm install`; because pnpm 11 re-runs install before every `pnpm run`, that failure would also block build/test/dev. `CI=true` makes the postinstall self-skip (exactly as in GitHub CI). Only the Lefthook installer reads `CI`; no app or test code does. The startup update script runs `CI=true pnpm install`.
+- **Build before serving the web UI.** `dsh web` serves the prebuilt frontend `dist/` and fails loud when it is missing, so run `pnpm run build` first (the update script does not build).
+- **Run the flagship web UI without a real key via the bundled mock model.** Start it — `pnpm run mock:llm -- --sequence success --repeat-last --success-text "..." --port 8000` — then launch `DEEPSEEK_API_KEY=<any> DEEPSEEK_BASE_URL=http://127.0.0.1:8000 pnpm dsh web`. In the browser, choose a workspace and send a message; the DeepSeek adapter posts to the mock and streams the success text back. With a real `DEEPSEEK_API_KEY` (env, `.env`, or the web Models page) drop the base-URL override.
+- **Known local-only test artifact.** Two tests in `packages/skill/tool-skill/tests/tool-skill.spec.ts` hardcode `agentForCwd('/workspace')` as an empty project root; because this repo is checked out at `/workspace`, the filesystem skill provider discovers the repo's own `.agents/skills`, so those two assertions fail here while passing in CI (which checks out elsewhere). It is a path collision, not a code defect.
