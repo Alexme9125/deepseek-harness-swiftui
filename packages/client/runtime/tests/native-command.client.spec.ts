@@ -132,22 +132,26 @@ describe('installNativeCommandListener', () => {
     installNativeCommandListener(api, new EventTarget())()
     expect(host.__dshNativeQueue).toEqual([])
     let resolved: unknown
-    host.__dshNativeQueue = [
-      null,
-      { detail: { name: 'new-session' } },
-      {
-        detail: { name: 'add-workspace', path: '/w/queued' },
-        resolve: (result: unknown) => { resolved = result },
-      },
-      {
-        detail: { name: 'new-session' },
-        resolve: () => {},
-        reject: 'not-a-function',
-      },
-    ]
+    const drained = new Promise<void>((settle) => {
+      host.__dshNativeQueue = [
+        null,
+        { detail: { name: 'new-session' } },
+        {
+          detail: { name: 'add-workspace', path: '/w/queued' },
+          resolve: (result: unknown) => {
+            resolved = result
+            settle()
+          },
+        },
+        {
+          detail: { name: 'new-session' },
+          resolve: () => {},
+          reject: 'not-a-function',
+        },
+      ]
+    })
     const dispose = installNativeCommandListener(api, new EventTarget())
-    await Promise.resolve()
-    await Promise.resolve()
+    await drained
     expect(resolved).toEqual({ ok: true })
     expect(api.create).toHaveBeenCalledWith({ path: '/w/queued' })
     expect(api.startSession).toHaveBeenCalled()
