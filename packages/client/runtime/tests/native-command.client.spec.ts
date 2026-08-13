@@ -110,14 +110,13 @@ describe('installNativeCommandListener', () => {
     const api = workspaces()
     const target = new EventTarget()
     const host = globalThis as NativeHost
-    host.__dshNativeInvoke = undefined
     const dispose = installNativeCommandListener(api, target)
     const invoke = host.__dshNativeInvoke
-    expect(typeof invoke).toBe('function')
+    if (invoke === undefined) throw new Error('expected __dshNativeInvoke after install')
     target.dispatchEvent(new CustomEvent(NATIVE_COMMAND_EVENT, { detail: { name: 'new-session' } }))
     target.dispatchEvent(new CustomEvent(NATIVE_COMMAND_EVENT, { detail: { name: 'open-settings' } }))
     target.dispatchEvent(new Event(NATIVE_COMMAND_EVENT))
-    await expect(invoke?.({ name: 'add-workspace', path: '/w/beta' })).resolves.toEqual({ ok: true })
+    await expect(invoke({ name: 'add-workspace', path: '/w/beta' })).resolves.toEqual({ ok: true })
     expect(api.startSession).toHaveBeenCalledTimes(2)
     expect(api.create).toHaveBeenCalledWith({ path: '/w/beta' })
     dispose()
