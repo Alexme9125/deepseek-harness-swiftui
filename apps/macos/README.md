@@ -15,7 +15,7 @@ A built `dsh-web-host` inside the `.app` is a closed `@yao-pkg/pkg --sea` execut
 
 ## Run from Xcode
 
-Open [`DeepSeekHarness.xcodeproj`](DeepSeekHarness.xcodeproj/project.pbxproj) from Finder or the Cursor file tree. Select the **DeepSeekHarness** scheme and Run. The first Run may take several minutes while it installs, builds the Web frontend, and packages `dsh-web-host`; later Runs skip those steps when the artifacts exist. Delete `apps/macos/dist/dsh-web-host` to rebuild the bundled host after JavaScript changes. The shared scheme sets the working directory to the repository root (`$(SRCROOT)/..`). The shell also recognizes this checkout from the compile-time `#filePath` of `LaunchResolver.swift`.
+Open [`DeepSeekHarness.xcodeproj`](DeepSeekHarness.xcodeproj/project.pbxproj) from Finder or the Cursor file tree. Select the **DeepSeekHarness** scheme and Run. The first Run may take several minutes while it installs, builds the Web frontend, and packages `dsh-web-host`; later Runs skip those steps when the artifacts exist. Delete `apps/macos/dist/dsh-web-host` to rebuild the bundled host after JavaScript changes. The shared scheme sets the working directory to the repository root (`$(SRCROOT)/../..`). The shell also recognizes this checkout from the compile-time `#filePath` of `LaunchResolver.swift`.
 
 ## Build from the command line
 
@@ -54,7 +54,7 @@ Optional environment variables, set in the scheme or the launching shell:
 | `DSH_CWD` | Child working directory (default workspace root). When unset: the checkout if known, otherwise the user's home — never `/` |
 | `DSH_SKIP_WEB_HOST_BUILD` | When `1`, the Xcode pre-action does not package `dsh-web-host` |
 
-The WebView opens `http://127.0.0.1:<n>/`, not `localhost`. Quit sends SIGTERM, then SIGKILL.
+The WebView opens `http://127.0.0.1:<n>/`, not `localhost`. Quit sends SIGTERM, then SIGKILL. The child does not inherit `DYLD_*` or `__XPC_DYLD_*` from the app: Xcode debugging inserts libraries that make the bundled Node SEA host abort with `kMagic`.
 
 The deploy root is [`web-host/package.json`](web-host/package.json) (`dsh-web-host-pkg`). Adding a plugin to the bundled host means adding one `workspace:` dependency there and repackaging. [`scripts/verify-runtime-closure.ts`](../../scripts/verify-runtime-closure.ts) requires every non-optional workspace peer of that graph to be listed on the deploy root.
 

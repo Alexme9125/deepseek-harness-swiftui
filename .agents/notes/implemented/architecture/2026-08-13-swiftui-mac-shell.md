@@ -16,7 +16,7 @@ Rewriting the Client plugin tree in SwiftUI would duplicate [`packages/client/*`
 
 The shell does not reimplement Client packages or add an IPC `doFetch` carrier. It uses the HTTP carriage the [GUI layering note](2026-07-19-gui-layering-and-rpc-protocol.md) already ships. Native File-menu actions, `NSOpenPanel`, and Dock or window folder drops dispatch a same-origin `dsh-native-command` event into that page so `ctx.workspaces` and SettingsRoot run the existing Web flows.
 
-The `.app` may embed `dsh-web-host`, a closed `@yao-pkg/pkg --sea` executable of the web profile. That product is not [`dsh-jsonrpc-agent-pkg`](2026-07-10-single-file-executable-sdk-runtime-distribution.md): the JSON-RPC exe boots an external `cordis.yml` over stdio and has no Host webserver or frontend dist. The web-host deploy root is [`apps/macos/web-host/package.json`](../../../../apps/macos/web-host/package.json). Its packaged entry is [`apps/cli/src/packaged-bin.ts`](../../../../apps/cli/src/packaged-bin.ts), which calls `runProfile` with `bareModuleBaseUrl` so bare plugins resolve from the VFS. App Sandbox stays off.
+The `.app` may embed `dsh-web-host`, a closed `@yao-pkg/pkg --sea` executable of the web profile. That product is not [`dsh-jsonrpc-agent-pkg`](2026-07-10-single-file-executable-sdk-runtime-distribution.md): the JSON-RPC exe boots an external `cordis.yml` over stdio and has no Host webserver or frontend dist. The web-host deploy root is [`apps/macos/web-host/package.json`](../../../../apps/macos/web-host/package.json). Its packaged entry is [`apps/cli/src/packaged-bin.ts`](../../../../apps/cli/src/packaged-bin.ts), which calls `runProfile` with `bareModuleBaseUrl` so bare plugins resolve from the VFS. The snapshot lists sharp's libvips shared libraries as pkg `assets` (`*.dylib`, `*.so`). pkg extracts the `@img` folder from the VFS when `dlopen` loads the sharp `.node` addon; dyld then follows `@rpath` on that real path. Omitting those assets leaves the addon on disk without libvips and the host exits during plugin init. App Sandbox stays off.
 
 ## Launch contract
 
@@ -29,9 +29,9 @@ Resolution uses the first match:
 
 The shell binds a free `127.0.0.1` port, closes the probe socket, and passes `--host 127.0.0.1 --port <n>`. Readiness is a successful `GET /` at `http://127.0.0.1:<n>/`. The WebView must open that IPv4 loopback origin, not `localhost`, so the existing `/api` trust fence still treats the page as loopback. Quit sends SIGTERM to the child and SIGKILL if it does not exit.
 
-The child's working directory is `DSH_CWD` when set, otherwise the resolved repository root, otherwise the user's home. A Finder-launched app must not inherit `/` as the default workspace root.
+The child's working directory is `DSH_CWD` when set, otherwise the resolved repository root, otherwise the user's home. A Finder-launched app must not inherit `/` as the default workspace root. The child environment copies the parent except `DYLD_*` and `__XPC_DYLD_*`: an Xcode-debugged parent inserts `DYLD_INSERT_LIBRARIES`, and Node SEA then reads `NODE_SEA_BLOB` from the inserted image and aborts with `kMagic`.
 
-The Xcode scheme packages `dsh-web-host` on first Run when `apps/macos/dist/dsh-web-host` is missing. Linux CI cannot emit `node24-macos-arm64`. Intel Macs are out of scope.
+The Xcode scheme packages `dsh-web-host` on first Run when `apps/macos/dist/dsh-web-host` is missing. Xcode sets SRCROOT to `apps/macos`; scheme pre-actions and the launch working directory resolve the checkout as the ancestor of SRCROOT that contains `apps/cli/src/bin.ts`. Linux CI cannot emit `node24-macos-arm64`. Intel Macs are out of scope.
 
 ## Native command contract
 
@@ -64,6 +64,8 @@ Swift File menu **New Session** (⌘N), **Add Workspace…** (⌘O, `NSOpenPanel
 **A public `window.openSettings()` Client API.** That widens the browser surface for one native host. The existing CustomEvent plus SettingsRoot local state is enough.
 
 **Reuse `dsh-jsonrpc-agent-pkg` as the bundled host.** That closure is the Python SDK stdio JSON-RPC runtime. It has no web frontend, no Host webserver, and no `dsh web` profile.
+
+**Ship libvips next to `dsh-web-host` like `node-pty`'s spawn-helper.** pkg already copies the `@img` folder from the snapshot when extracting the sharp `.node`; listing the dylib as an asset uses that path. A sidecar would also need `install_name_tool` on the addon, because dyld does not search next to the SEA executable.
 
 **Enable App Sandbox.** The child must read arbitrary workspace paths and `$DSH_HOME`. Enabling the sandbox is a later product decision.
 

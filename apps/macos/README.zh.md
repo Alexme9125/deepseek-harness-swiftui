@@ -15,7 +15,7 @@ DeepSeek Harness 的 SwiftUI 产品窗口。应用把现有 `web` profile 作为
 
 ## 从 Xcode 运行
 
-从 Finder 或 Cursor 文件树打开 [`DeepSeekHarness.xcodeproj`](DeepSeekHarness.xcodeproj/project.pbxproj)。选择 **DeepSeekHarness** scheme 并 Run。第一次 Run 可能要几分钟来安装、构建 Web 前端并打包 `dsh-web-host`；之后若产物已存在会跳过。JavaScript 变更后若要重建捆绑宿主，删除 `apps/macos/dist/dsh-web-host`。共享 scheme 把工作目录设为仓库根（`$(SRCROOT)/..`）。壳也会从 `LaunchResolver.swift` 的编译期 `#filePath` 识别本 checkout。
+从 Finder 或 Cursor 文件树打开 [`DeepSeekHarness.xcodeproj`](DeepSeekHarness.xcodeproj/project.pbxproj)。选择 **DeepSeekHarness** scheme 并 Run。第一次 Run 可能要几分钟来安装、构建 Web 前端并打包 `dsh-web-host`；之后若产物已存在会跳过。JavaScript 变更后若要重建捆绑宿主，删除 `apps/macos/dist/dsh-web-host`。共享 scheme 把工作目录设为仓库根（`$(SRCROOT)/../..`）。壳也会从 `LaunchResolver.swift` 的编译期 `#filePath` 识别本 checkout。
 
 ## 从命令行构建
 
@@ -54,7 +54,7 @@ xcodebuild -scheme DeepSeekHarness -configuration Debug -destination 'platform=m
 | `DSH_CWD` | 子进程工作目录（默认 workspace 根）。未设置时：已知则用 checkout，否则用用户 home——绝不用 `/` |
 | `DSH_SKIP_WEB_HOST_BUILD` | 为 `1` 时，Xcode pre-action 不打包 `dsh-web-host` |
 
-WebView 打开 `http://127.0.0.1:<n>/`，而不是 `localhost`。退出时发送 SIGTERM，然后 SIGKILL。
+WebView 打开 `http://127.0.0.1:<n>/`，而不是 `localhost`。退出时发送 SIGTERM，然后 SIGKILL。子进程不继承应用的 `DYLD_*` 或 `__XPC_DYLD_*`：Xcode 调试会插入动态库，使捆绑的 Node SEA 宿主以 `kMagic` 中止。
 
 部署根是 [`web-host/package.json`](web-host/package.json)（`dsh-web-host-pkg`）。向捆绑宿主添加插件，就是在该文件增加一行 `workspace:` 依赖后重新打包。[`scripts/verify-runtime-closure.ts`](../../scripts/verify-runtime-closure.ts) 要求该图中每个非可选的工作区对等依赖都列在部署根上。
 

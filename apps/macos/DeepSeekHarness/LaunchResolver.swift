@@ -56,6 +56,16 @@ enum LaunchResolver {
     return FileManager.default.homeDirectoryForCurrentUser
   }
 
+  /// Copy the parent environment for the child `dsh` process, dropping dyld
+  /// insert variables. Xcode puts `DYLD_INSERT_LIBRARIES` on a debugged app;
+  /// Node SEA then reads `NODE_SEA_BLOB` from the inserted image and aborts
+  /// with `Assertion failed: (magic) == (kMagic)`.
+  static func environmentForChild(_ environment: [String: String]) -> [String: String] {
+    environment.filter { key, _ in
+      !key.hasPrefix("DYLD_") && !key.hasPrefix("__XPC_DYLD_")
+    }
+  }
+
   static func augmentedPath(environment: [String: String] = ProcessInfo.processInfo.environment) -> String {
     var parts: [String] = []
     let extras = [environment["PATH"], loginShellPath(), "/opt/homebrew/bin", "/usr/local/bin"]

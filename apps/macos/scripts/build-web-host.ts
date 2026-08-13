@@ -29,9 +29,11 @@ const STAGING_DIR = 'apps/macos/dist/closure'
 const DEPLOY_SOURCE_NODE_MODULES = 'apps/macos/web-host/node_modules'
 
 /**
- * Whole-tree assets cover Cordis's runtime bare-package imports and the Web
- * frontend dist. pkg's static analysis cannot see dynamic import or
- * `require.resolve` of HTML/CSS/YAML.
+ * Whole-tree assets cover Cordis's runtime bare-package imports, the Web
+ * frontend dist, and native shared libraries that `dlopen` of `.node` addons
+ * resolves via `@rpath`. pkg copies the scoped `node_modules/<scope>` folder
+ * from the snapshot onto disk; dyld and ld.so cannot read the VFS. Static
+ * analysis cannot see dynamic import or `require.resolve` of HTML/CSS/YAML.
  */
 const ASSET_GLOBS = [
   'package.json',
@@ -41,6 +43,9 @@ const ASSET_GLOBS = [
   'node_modules/**/package.json',
   'node_modules/**/*.json',
   'node_modules/**/*.node',
+  'node_modules/**/*.dylib',
+  'node_modules/**/*.so',
+  'node_modules/**/*.so.*',
   'node_modules/**/*.wasm',
   'node_modules/**/*.yml',
   'node_modules/**/*.yaml',

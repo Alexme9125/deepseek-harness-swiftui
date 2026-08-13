@@ -16,7 +16,7 @@ Status: implemented
 
 该壳不重实现 Client 包，也不新增 IPC `doFetch` 载体。它使用 [GUI 分层说明](2026-07-19-gui-layering-and-rpc-protocol.md) 已经交付的 HTTP 承载。原生 File 菜单操作、`NSOpenPanel` 以及 Dock 或窗口的文件夹拖放，向该页派发同源的 `dsh-native-command` 事件，使 `ctx.workspaces` 与 SettingsRoot 走现有 Web 流程。
 
-`.app` 可以嵌入 `dsh-web-host`，即 web profile 的封闭 `@yao-pkg/pkg --sea` 可执行文件。该产物不是 [`dsh-jsonrpc-agent-pkg`](2026-07-10-single-file-executable-sdk-runtime-distribution.md)：JSON-RPC exe 通过 stdio 启动外部 `cordis.yml`，没有 Host webserver，也没有前端 dist。web-host 的部署根是 [`apps/macos/web-host/package.json`](../../../../apps/macos/web-host/package.json)。其打包入口是 [`apps/cli/src/packaged-bin.ts`](../../../../apps/cli/src/packaged-bin.ts)，它以 `bareModuleBaseUrl` 调用 `runProfile`，使裸插件从 VFS 解析。App Sandbox 保持关闭。
+`.app` 可以嵌入 `dsh-web-host`，即 web profile 的封闭 `@yao-pkg/pkg --sea` 可执行文件。该产物不是 [`dsh-jsonrpc-agent-pkg`](2026-07-10-single-file-executable-sdk-runtime-distribution.md)：JSON-RPC exe 通过 stdio 启动外部 `cordis.yml`，没有 Host webserver，也没有前端 dist。web-host 的部署根是 [`apps/macos/web-host/package.json`](../../../../apps/macos/web-host/package.json)。其打包入口是 [`apps/cli/src/packaged-bin.ts`](../../../../apps/cli/src/packaged-bin.ts)，它以 `bareModuleBaseUrl` 调用 `runProfile`，使裸插件从 VFS 解析。快照把 sharp 的 libvips 共享库列为 pkg `assets`（`*.dylib`、`*.so`）。`dlopen` 加载 sharp 的 `.node` addon 时，pkg 把 `@img` 目录从 VFS 解到磁盘，dyld 再在该真实路径上跟随 `@rpath`。漏掉这些资源时，磁盘上只有 addon 没有 libvips，宿主在插件初始化期间退出。App Sandbox 保持关闭。
 
 ## Launch contract
 
@@ -29,9 +29,9 @@ Status: implemented
 
 该壳绑定一个空闲的 `127.0.0.1` 端口，关闭探测套接字，并传入 `--host 127.0.0.1 --port <n>`。就绪条件是对 `http://127.0.0.1:<n>/` 的 `GET /` 成功。WebView 必须打开该 IPv4 loopback 源，而不是 `localhost`，以便现有 `/api` 信任栅栏仍把该页视为 loopback。退出时向子进程发送 SIGTERM，若未退出再发送 SIGKILL。
 
-子进程工作目录在已设置时为 `DSH_CWD`，否则为解析到的仓库根，否则为用户 home。从 Finder 启动的应用不得把 `/` 继承为默认 workspace 根。
+子进程工作目录在已设置时为 `DSH_CWD`，否则为解析到的仓库根，否则为用户 home。从 Finder 启动的应用不得把 `/` 继承为默认 workspace 根。子进程环境复制父进程，但去掉 `DYLD_*` 与 `__XPC_DYLD_*`：Xcode 调试父进程时会插入 `DYLD_INSERT_LIBRARIES`，Node SEA 随后从被插入的镜像读取 `NODE_SEA_BLOB` 并以 `kMagic` 中止。
 
-Xcode scheme 在缺少 `apps/macos/dist/dsh-web-host` 时于首次 Run 打包它。Linux CI 无法产出 `node24-macos-arm64`。Intel Mac 不在范围内。
+Xcode scheme 在缺少 `apps/macos/dist/dsh-web-host` 时于首次 Run 打包它。Xcode 将 SRCROOT 设为 `apps/macos`；scheme 的 pre-action 与启动工作目录把 checkout 解析为 SRCROOT 之上、且包含 `apps/cli/src/bin.ts` 的祖先目录。Linux CI 无法产出 `node24-macos-arm64`。Intel Mac 不在范围内。
 
 ## Native command contract
 
@@ -64,6 +64,8 @@ Swift 的 File 菜单 **New Session**（⌘N）、**Add Workspace…**（⌘O，
 **新增公开的 `window.openSettings()` Client API。** 那会为了一个原生宿主扩大浏览器界面。现有的 CustomEvent 加上 SettingsRoot 的本地状态已经足够。
 
 **把 `dsh-jsonrpc-agent-pkg` 当作捆绑宿主复用。** 该闭包是 Python SDK 的 stdio JSON-RPC 运行时。它没有 web 前端、没有 Host webserver，也没有 `dsh web` profile。
+
+**像 `node-pty` 的 spawn-helper 一样，把 libvips 放在 `dsh-web-host` 旁边。** pkg 在提取 sharp 的 `.node` 时已经会把快照里的 `@img` 目录拷到磁盘；把 dylib 列为 asset 就走这条路径。伴随文件还要对 addon 做 `install_name_tool`，因为 dyld 不会在 SEA 可执行文件旁边搜索。
 
 **启用 App Sandbox。** 子进程必须读取任意 workspace 路径和 `$DSH_HOME`。启用沙箱属于后续产品决策。
 

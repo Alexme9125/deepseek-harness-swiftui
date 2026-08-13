@@ -3,12 +3,7 @@
 # after ensure-web-dist.sh. Linux and DSH_SKIP_WEB_HOST_BUILD=1 skip.
 set -euo pipefail
 
-if [[ -n "${SRCROOT:-}" ]]; then
-  REPO="$(cd "$SRCROOT/.." && pwd)"
-else
-  REPO="$(cd "$(dirname "$0")/../.." && pwd)"
-fi
-
+REPO="$("$(cd "$(dirname "$0")" && pwd)/resolve-repo.sh")"
 cd "$REPO"
 
 export CI=true
@@ -54,6 +49,11 @@ SKIP_BUILD=()
 if [[ -f apps/cli/lib/packaged-bin.js && -f apps/web/dist/index.html ]]; then
   SKIP_BUILD=(--skip-build)
   print "ensure-web-host: lib and frontend dist present; skipping pnpm run build"
+fi
+
+if [[ ! -f apps/macos/scripts/build-web-host.ts ]]; then
+  print -u2 "error: $REPO is not the repository root (missing apps/macos/scripts/build-web-host.ts)."
+  exit 1
 fi
 
 print "ensure-web-host: packaging dsh-web-host (first time can take several minutes)"

@@ -41,7 +41,7 @@ final class HarnessProcess: @unchecked Sendable {
     let child = Process()
     child.currentDirectoryURL = cwd
     child.qualityOfService = .userInitiated
-    var env = environment
+    var env = LaunchResolver.environmentForChild(environment)
     env["PATH"] = path
     child.environment = env
 

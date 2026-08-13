@@ -23,6 +23,8 @@ describe('build-web-host', () => {
     expect(result.stdout).toContain('apps/macos/web-host/package.json')
     expect(result.stdout).toContain('node_modules/@deepseek-ai/dsh/lib/packaged-bin.js')
     expect(result.stdout).toContain('apps/macos/dist/dsh-web-host')
+    expect(result.stdout).toContain('node_modules/**/*.dylib')
+    expect(result.stdout).toContain('node_modules/**/*.so')
     expect(result.stdout).not.toContain('dsh-jsonrpc-agent-pkg')
     expect(result.stdout).not.toContain('python/sdk-runtime')
   })
