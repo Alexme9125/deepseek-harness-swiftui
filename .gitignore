@@ -24,6 +24,9 @@ tmp/
 .vscode/
 .DS_Store
 .idea
+xcuserdata/
+*.xcuserstate
+apps/macos/DerivedData/
 mise.toml
 dist-exe/
 python/sdk-runtime/src/deepseek_harness_runtime/runtime/dsh-jsonrpc-agent-*

@@ -34,6 +34,10 @@ pnpm run build
 pnpm dsh web
 ```
 
+### Run the macOS app
+
+On macOS 14+ / Apple Silicon, after the source steps above, open [`apps/macos/DeepSeekHarness.xcodeproj`](apps/macos/README.md) and Run. The window launches `dsh web` on loopback and shows the same Web UI.
+
 ## Community and support
 
 - Feel free to submit feedback or bug reports through [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions).

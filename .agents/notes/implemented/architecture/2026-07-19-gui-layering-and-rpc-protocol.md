@@ -32,10 +32,11 @@ Directories layer as follows:
 - `apps/` holds the externally exported applications, assembled from Client / Host mixtures.
     - `apps/web` (`dsh-web-frontend`) is the vite application: a thin `main.ts` over the shell API exported by `dsh-client-web`.
     - `apps/cli` (`@deepseek-ai/dsh`) dispatches commands: `dsh web` = Host + webserver + the built `dsh-web-frontend` dist; `dsh --profile headless` = [a direct core Agent/Session entry point](2026-08-09-headless-direct-core-entry-point.md), with zero Host, HTTP, or browser layer.
+    - `apps/macos` is the SwiftUI product window: it launches the `web` profile and loads the built frontend in WKWebView over loopback HTTP ([`apps/macos`](../../../../apps/macos/README.md)).
     - A future Electron application reuses the same web client packages over an IPC fetch carrier.
 
 ```
-apps/*  (applications: apps/web = vite app, apps/cli = bin dispatch)
+apps/*  (applications: apps/web = vite app, apps/cli = bin dispatch, apps/macos = SwiftUI shell)
   │ consume
   ▼
 packages/host/*                      packages/client/*
