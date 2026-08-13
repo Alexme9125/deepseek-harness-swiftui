@@ -11,15 +11,11 @@ This checkout is the Phase-1 shell: you still need Node 24 and a built frontend 
 - macOS 14 or later on Apple Silicon
 - Xcode 16 or later
 - Node.js `^22.19 || >=24` and Corepack pnpm, from a login shell so the app can find `node`
-- In this repository: `pnpm install` and `pnpm run build` (the Web host fails loud without `apps/web/dist`)
+- In this repository: Node and pnpm on the login PATH. The DeepSeekHarness scheme runs [`scripts/ensure-web-dist.sh`](scripts/ensure-web-dist.sh) before compile and executes `pnpm install` / `pnpm run build` only when `node_modules` or `apps/web/dist` is missing.
 
 ## Run from Xcode
 
-```sh
-open apps/macos/DeepSeekHarness.xcodeproj
-```
-
-Select the **DeepSeekHarness** scheme and Run. The shared scheme sets the working directory to the repository root (`$(SRCROOT)/..`). The shell also recognizes this checkout from the compile-time `#filePath` of `LaunchResolver.swift`.
+Open [`DeepSeekHarness.xcodeproj`](DeepSeekHarness.xcodeproj/project.pbxproj) from Finder or the Cursor file tree. Select the **DeepSeekHarness** scheme and Run. The first Run may take several minutes while it installs and builds the Web frontend; later Runs skip that when `apps/web/dist` exists. The shared scheme sets the working directory to the repository root (`$(SRCROOT)/..`). The shell also recognizes this checkout from the compile-time `#filePath` of `LaunchResolver.swift`.
 
 ## Build from the command line
 

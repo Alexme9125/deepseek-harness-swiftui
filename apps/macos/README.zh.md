@@ -11,15 +11,11 @@ DeepSeek Harness 的 SwiftUI 产品窗口。应用把现有 `web` profile 作为
 - Apple Silicon 上的 macOS 14 或更高版本
 - Xcode 16 或更高版本
 - Node.js `^22.19 || >=24` 与 Corepack pnpm，且来自 login shell，以便应用能找到 `node`
-- 在本仓库中：`pnpm install` 与 `pnpm run build`（没有 `apps/web/dist` 时 Web 宿主会明确失败）
+- 在本仓库中：login PATH 上有 Node 与 pnpm。DeepSeekHarness scheme 在编译前运行 [`scripts/ensure-web-dist.sh`](scripts/ensure-web-dist.sh)，仅在缺少 `node_modules` 或 `apps/web/dist` 时执行 `pnpm install` / `pnpm run build`。
 
 ## 从 Xcode 运行
 
-```sh
-open apps/macos/DeepSeekHarness.xcodeproj
-```
-
-选择 **DeepSeekHarness** scheme 并 Run。共享 scheme 把工作目录设为仓库根（`$(SRCROOT)/..`）。壳也会从 `LaunchResolver.swift` 的编译期 `#filePath` 识别本 checkout。
+从 Finder 或 Cursor 文件树打开 [`DeepSeekHarness.xcodeproj`](DeepSeekHarness.xcodeproj/project.pbxproj)。选择 **DeepSeekHarness** scheme 并 Run。第一次 Run 可能要几分钟来安装并构建 Web 前端；之后若已有 `apps/web/dist` 会跳过。共享 scheme 把工作目录设为仓库根（`$(SRCROOT)/..`）。壳也会从 `LaunchResolver.swift` 的编译期 `#filePath` 识别本 checkout。
 
 ## 从命令行构建
 
