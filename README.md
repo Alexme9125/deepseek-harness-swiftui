@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-This repository is Alex Xiao's **personal** macOS packaging of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). It is not an official [DeepSeek AI](https://deepseek.com) product, and it is not an official Darwin Anime Club product.
+This repository is Alex9125's **personal** macOS packaging of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). It is not an official [DeepSeek AI](https://deepseek.com) product, and it is not an official Darwin Anime Club product.
 
 Alex (Alex Xiao) is a member of the Darwin Anime Club (Darwin 动漫社) technical department. This repository is Alex's personal project. A large part of the code here was written in [Cursor](https://cursor.com) with Grok and Composer.
 
