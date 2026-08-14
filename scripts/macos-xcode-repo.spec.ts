@@ -6,7 +6,12 @@ const repo = resolve(import.meta.dirname, '..')
 const resolveRepo = resolve(repo, 'apps/macos/scripts/resolve-repo.sh')
 const ensureHost = resolve(repo, 'apps/macos/scripts/ensure-web-host.sh')
 
-describe('macos Xcode repo resolution', () => {
+// Xcode invokes these scripts through /bin/zsh, which every macOS host has.
+// Linux runner images do not preinstall zsh, and a missing interpreter reports
+// `status: null` rather than a failing assertion about repository resolution.
+const describeZsh = spawnSync('zsh', ['-c', 'true']).status === 0 ? describe : describe.skip
+
+describeZsh('macos Xcode repo resolution', () => {
   it('treats Xcode SRCROOT apps/macos as the checkout, not apps/', () => {
     const result = spawnSync('zsh', [resolveRepo], {
       encoding: 'utf8',
