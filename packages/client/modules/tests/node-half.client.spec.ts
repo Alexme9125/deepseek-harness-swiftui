@@ -149,4 +149,34 @@ describe('client bundle activation', () => {
     })
     expect(body).toBe(map)
   })
+
+  it('resolves dsh.client packages from the host tree when the config directory cannot', () => {
+    root = realpathSync(mkdtempSync(join(tmpdir(), 'dsh-client-modules-')))
+    const hostName = '@deepseek-ai/dsh-client-modules'
+    let thrown: unknown
+    let service: ClientModuleRegistry | undefined
+    try {
+      service = construct([hostName])
+    } catch (error) {
+      thrown = error
+    }
+    if (service !== undefined) {
+      expect(service.graph().entries.map(entry => entry.id)).toContain(hostName)
+      return
+    }
+    expect(String(thrown)).toMatch(/client bundle not found/)
+  })
+
+  it('leaves loader builtins out of the boot graph', () => {
+    root = realpathSync(mkdtempSync(join(tmpdir(), 'dsh-client-modules-')))
+    expect(construct(['cordis:include']).graph().entries).toEqual([])
+  })
+
+  it('prefers a package the config directory can resolve over the host tree', () => {
+    const packageName = '@deepseek-ai/dsh-client-modules'
+    const clientPath = writePackage(packageName)
+    mkdirSync(dirname(clientPath), { recursive: true })
+    writeFileSync(clientPath, "module.exports = { from: 'config' }\n")
+    expect(construct([packageName]).clientPath(packageName)).toBe(clientPath)
+  })
 })

@@ -14,6 +14,9 @@ enum HarnessLaunchError: LocalizedError, Equatable {
     case .exited(let status, let stderr):
       let tail = stderr.trimmingCharacters(in: .whitespacesAndNewlines)
       if tail.isEmpty {
+        if status == 9 {
+          return "The harness process was killed (status 9). macOS sends SIGKILL when nested dsh-web-host has an invalid code signature."
+        }
         return "The harness process exited with status \(status)."
       }
       return "The harness process exited with status \(status).\n\n\(tail)"
@@ -101,11 +104,13 @@ final class HarnessProcess: @unchecked Sendable {
 
   private func waitUntilReady(url: URL, child: Process, timeout: TimeInterval = 90) async throws {
     let deadline = Date().addingTimeInterval(timeout)
+    let port = UInt16(url.port ?? 0)
     while Date() < deadline {
       if !child.isRunning {
         throw HarnessLaunchError.exited(status: child.terminationStatus, stderr: stderrText())
       }
-      if await probe(url) {
+      // URLSession logs every refused GET; a TCP connect does not.
+      if port != 0, loopbackPortIsOpen(port), await probe(url) {
         return
       }
       try await Task.sleep(for: .milliseconds(200))
@@ -159,6 +164,26 @@ final class HarnessProcess: @unchecked Sendable {
 
 func loopbackURL(port: UInt16) -> URL {
   URL(string: "http://127.0.0.1:\(port)/")!
+}
+
+/// True when something on `127.0.0.1:port` accepts a TCP connection.
+func loopbackPortIsOpen(_ port: UInt16) -> Bool {
+  let fd = Darwin.socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
+  guard fd >= 0 else { return false }
+  defer { Darwin.close(fd) }
+  var nosig: Int32 = 1
+  _ = setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &nosig, socklen_t(MemoryLayout<Int32>.size))
+  var addr = sockaddr_in()
+  addr.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+  addr.sin_family = sa_family_t(AF_INET)
+  addr.sin_addr = in_addr(s_addr: inet_addr("127.0.0.1"))
+  addr.sin_port = port.bigEndian
+  let result = withUnsafePointer(to: &addr) { pointer in
+    pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
+      Darwin.connect(fd, sockaddrPointer, socklen_t(MemoryLayout<sockaddr_in>.size))
+    }
+  }
+  return result == 0
 }
 
 /// Bind `127.0.0.1:0`, read the assigned port, then close. Another process may grab the port before `dsh` listens.
