@@ -36,7 +36,7 @@ xcodebuild -scheme DeepSeekHarness -configuration Debug -destination 'platform=m
 
 ## 内部分发
 
-`pnpm run package:macos-app` 对 `arm64` 做 Release 构建，并写出 `apps/macos/dist/release/DeepSeekHarness-<版本>-<构建号>-arm64.zip`。该二进制缺失时它先打包 `dsh-web-host`，因为 `xcodebuild` 不执行 scheme pre-action。归档之前它要求两个嵌套可执行文件都在、`codesign --verify --deep --strict` 通过，并跑一次捆绑宿主的 `--help`。传 `--dry-run` 打印计划，或传 `--skip-web-host` 要求使用已有宿主而不重新打包。
+`pnpm run package:macos-app` 对 `arm64` 做 Release 构建，并写出 `apps/macos/dist/release/DeepSeekHarness-<版本>-<构建号>-arm64.zip` 以及配套的 `.dmg`（UDZO，带 Applications 符号链接）。该二进制缺失时它先打包 `dsh-web-host`，因为 `xcodebuild` 不执行 scheme pre-action。归档之前它要求两个嵌套可执行文件都在、`codesign --verify --deep --strict` 通过，并跑一次捆绑宿主的 `--help`。传 `--dry-run` 打印计划，或传 `--skip-web-host` 要求使用已有宿主而不重新打包。
 
 接收方需要 macOS 14 或更高版本的 Apple Silicon 机器，不需要 Node。该 bundle 是 ad-hoc 签名，因此下载设置 quarantine 属性之后 Gatekeeper 会拒绝它：
 
@@ -44,7 +44,7 @@ xcodebuild -scheme DeepSeekHarness -configuration Debug -destination 'platform=m
 xattr -dr com.apple.quarantine /Applications/DeepSeekHarness.app
 ```
 
-这让该产物适合交给同事的构建，而不适合公开下载。决策记录与公开发布所需条件：[内部分发](../../.agents/notes/implemented/architecture/2026-08-14-macos-internal-distribution.md)。
+本 fork 把该 DMG 发布为 GitHub Release。仍然需要清除 quarantine；该构建未经公证。决策记录：[内部分发](../../.agents/notes/implemented/architecture/2026-08-14-macos-internal-distribution.md)、[GitHub Release DMG](../../.agents/notes/implemented/architecture/2026-08-14-macos-dmg-github-release.md)。
 
 ## 应用图标
 

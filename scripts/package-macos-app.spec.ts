@@ -21,7 +21,7 @@ describe('package-app', () => {
     expect(`${result.stdout}${result.stderr}`).toContain('packaging needs macOS with Xcode')
   })
 
-  it('plans an arm64 Release build that stamps the version and zips with ditto', () => {
+  it('plans an arm64 Release build that stamps the version, zips with ditto, and wraps a UDZO DMG', () => {
     const result = spawnSync('pnpm', ['exec', 'tsx', script, '--dry-run'], { encoding: 'utf8' })
     expect(result.status).toBe(0)
     expect(result.stdout).toContain('-configuration Release')
@@ -30,6 +30,10 @@ describe('package-app', () => {
     expect(result.stdout).toMatch(/CURRENT_PROJECT_VERSION=\d+/)
     expect(result.stdout).toContain('--keepParent')
     expect(result.stdout).toMatch(/apps\/macos\/dist\/release\/DeepSeekHarness-\d+\.\d+\.\d+-\d+-arm64\.zip/)
+    expect(result.stdout).toContain('ln -s /Applications')
+    expect(result.stdout).toContain('hdiutil create')
+    expect(result.stdout).toContain('-format UDZO')
+    expect(result.stdout).toMatch(/apps\/macos\/dist\/release\/DeepSeekHarness-\d+\.\d+\.\d+-\d+-arm64\.dmg/)
   })
 
   it('packages the web-host when it is absent and fails loud when the flag forbids that', () => {

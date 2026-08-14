@@ -1,11 +1,12 @@
 /**
- * Package DeepSeekHarness.app for internal distribution: a Release build with
- * the bundled web-host inside it, zipped with `ditto`.
+ * Package DeepSeekHarness.app for distribution: a Release build with the
+ * bundled web-host inside it, zipped with `ditto` and wrapped in a UDZO DMG.
  *
  * The product is ad-hoc signed, so Gatekeeper rejects it after a download sets
  * the quarantine attribute; the printed instructions carry the removal command.
- * A public build needs Developer ID signing, Hardened Runtime, and notarization
- * (see the internal-distribution Agent Note).
+ * A notarized public build needs Developer ID signing and Hardened Runtime
+ * (see the internal-distribution Agent Note). This fork publishes the DMG as a
+ * GitHub Release anyway (see the DMG GitHub Release Agent Note).
  *
  * `xcodebuild` does not run scheme pre-actions, so this script packages the
  * web-host itself instead of relying on `ensure-web-host.sh`.
@@ -92,8 +93,8 @@ class PackageCli {
       '  --dry-run          print every command without executing.',
       '  --help             print this help.',
       '',
-      `Builds ${CONFIGURATION} for ${ARCH} only and zips ${APP_BUNDLE} with ditto.`,
-      'The product is ad-hoc signed: internal distribution only, not notarized.',
+      `Builds ${CONFIGURATION} for ${ARCH} only, zips ${APP_BUNDLE} with ditto, and wraps it in a UDZO DMG.`,
+      'The product is ad-hoc signed and not notarized; GitHub Release recipients must clear quarantine.',
     ].join('\n')
   }
 }
@@ -310,7 +311,7 @@ class AppPackage {
    * @param version - the version whose numbers name the archive.
    * @returns the archive path.
    */
-  async archive(version: BundleVersion): Promise<string> {
+  async archiveZip(version: BundleVersion): Promise<string> {
     const outDir = resolve(root, this.cli.outDir)
     const zip = join(outDir, `${SCHEME}-${version.marketing}-${version.build}-${ARCH}.zip`)
     if (this.cli.dryRun) {
@@ -319,30 +320,75 @@ class AppPackage {
       await mkdir(outDir, { recursive: true })
       await rm(zip, { force: true })
     }
-    await this.step('ditto', 'ditto', ['-c', '-k', '--sequesterRsrc', '--keepParent', this.appPath, zip])
+    await this.step('ditto zip', 'ditto', ['-c', '-k', '--sequesterRsrc', '--keepParent', this.appPath, zip])
     return zip
   }
 
   /**
-   * Print the archive, its size, and what a recipient must do. Ad-hoc signing
-   * makes the quarantine removal part of the delivery, not an optional tip.
-   * @param zip - the archive path.
+   * Wrap the bundle in a UDZO DMG with an Applications symlink so a recipient
+   * can drag the app into place. Ad-hoc signing is unchanged: Gatekeeper still
+   * rejects the download until quarantine is cleared.
+   * @param version - the version whose numbers name the image.
+   * @returns the DMG path.
+   */
+  async archiveDmg(version: BundleVersion): Promise<string> {
+    const outDir = resolve(root, this.cli.outDir)
+    const dmg = join(outDir, `${SCHEME}-${version.marketing}-${version.build}-${ARCH}.dmg`)
+    const stage = join(outDir, 'dmg-root')
+    const stagedApp = join(stage, APP_BUNDLE)
+    const applicationsLink = join(stage, 'Applications')
+    if (this.cli.dryRun) {
+      console.log(`package-app: [dry-run] mkdir -p ${stage}`)
+      console.log(`package-app: [dry-run] rm -f ${dmg}`)
+    } else {
+      await mkdir(outDir, { recursive: true })
+      await rm(stage, { recursive: true, force: true })
+      await rm(dmg, { force: true })
+      await mkdir(stage, { recursive: true })
+    }
+    await this.step('stage app', 'ditto', [this.appPath, stagedApp])
+    await this.step('Applications link', 'ln', ['-s', '/Applications', applicationsLink])
+    await this.step('hdiutil', 'hdiutil', [
+      'create',
+      '-volname', SCHEME,
+      '-srcfolder', stage,
+      '-ov',
+      '-format', 'UDZO',
+      dmg,
+    ])
+    if (this.cli.dryRun) {
+      console.log(`package-app: [dry-run] rm -rf ${stage}`)
+    } else {
+      await rm(stage, { recursive: true, force: true })
+    }
+    return dmg
+  }
+
+  /**
+   * Print the archives, their sizes, and what a recipient must do. Ad-hoc
+   * signing makes the quarantine removal part of the delivery, not an optional
+   * tip.
+   * @param zip - the zip path.
+   * @param dmg - the DMG path.
    * @param version - the packaged version.
    */
-  report(zip: string, version: BundleVersion): void {
+  report(zip: string, dmg: string, version: BundleVersion): void {
     if (this.cli.dryRun) {
       console.log(`package-app: [dry-run] would produce ${zip}`)
+      console.log(`package-app: [dry-run] would produce ${dmg}`)
       return
     }
-    const megabytes = statSync(zip).size / (1024 * 1024)
+    const zipMegabytes = statSync(zip).size / (1024 * 1024)
+    const dmgMegabytes = statSync(dmg).size / (1024 * 1024)
     console.log('')
-    console.log(`package-app: ${zip} (${megabytes.toFixed(1)} MB)`)
+    console.log(`package-app: ${zip} (${zipMegabytes.toFixed(1)} MB)`)
+    console.log(`package-app: ${dmg} (${dmgMegabytes.toFixed(1)} MB)`)
     console.log(`package-app: version ${version.marketing} build ${version.build} revision ${version.revision}`)
     console.log('')
-    console.log('Send the zip with these steps. The app is ad-hoc signed, so Gatekeeper blocks it until the')
+    console.log('The GitHub Release attaches the DMG. The app is ad-hoc signed, so Gatekeeper blocks it until the')
     console.log('quarantine attribute a download adds is removed:')
     console.log('')
-    console.log('  1. Unzip and move DeepSeekHarness.app to /Applications.')
+    console.log('  1. Open the DMG and drag DeepSeekHarness.app to Applications.')
     console.log('  2. xattr -dr com.apple.quarantine /Applications/DeepSeekHarness.app')
     console.log('  3. Open it. Report the version, build, and revision above with any problem.')
     console.log('')
@@ -379,7 +425,9 @@ async function main(): Promise<void> {
   await pipeline.ensureWebHost()
   await pipeline.build(version)
   await pipeline.verify()
-  pipeline.report(await pipeline.archive(version), version)
+  const zip = await pipeline.archiveZip(version)
+  const dmg = await pipeline.archiveDmg(version)
+  pipeline.report(zip, dmg, version)
 }
 
 await main()

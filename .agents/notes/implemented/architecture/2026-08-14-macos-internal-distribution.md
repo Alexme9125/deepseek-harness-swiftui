@@ -12,9 +12,9 @@ A public download needs Developer ID signing, Hardened Runtime, and notarization
 
 ## Decision
 
-[`scripts/package-app.ts`](../../../../apps/macos/scripts/package-app.ts) (`pnpm run package:macos-app`) produces one ad-hoc signed zip for internal distribution. Recipients need macOS 14 or later on Apple Silicon and no Node.
+[`scripts/package-app.ts`](../../../../apps/macos/scripts/package-app.ts) (`pnpm run package:macos-app`) produces one ad-hoc signed zip and a UDZO DMG (app plus an `/Applications` symlink). Recipients need macOS 14 or later on Apple Silicon and no Node. [This fork's GitHub Release](2026-08-14-macos-dmg-github-release.md) publishes that DMG.
 
-The script packages `dsh-web-host` when `apps/macos/dist/dsh-web-host` is absent, because `xcodebuild` does not run the scheme pre-actions that Xcode Run uses. It clean-builds Release for `arm64`, stamps `MARKETING_VERSION` from the leading `x.y.z` of the repository version and `CURRENT_PROJECT_VERSION` from this checkout's commit count, then archives with `ditto -c -k --sequesterRsrc --keepParent`.
+The script packages `dsh-web-host` when `apps/macos/dist/dsh-web-host` is absent, because `xcodebuild` does not run the scheme pre-actions that Xcode Run uses. It clean-builds Release for `arm64`, stamps `MARKETING_VERSION` from the leading `x.y.z` of the repository version and `CURRENT_PROJECT_VERSION` from this checkout's commit count, then archives with `ditto -c -k --sequesterRsrc --keepParent` and `hdiutil create -format UDZO`.
 
 Before archiving it requires both nested executables (`dsh-web-host`, `dsh-web-host-spawn-helper`), a passing `codesign --verify --deep --strict`, and a `--help` run of the bundled host against a throwaway `DSH_HOME`. A recipient has no source-launch fallback, so a missing host or a broken bundle seal must fail on the packaging machine; an unsealed nested helper otherwise dies with SIGKILL ([nested signing](2026-08-13-swiftui-mac-shell.md#launch-contract)).
 
@@ -24,7 +24,7 @@ The app icon is a real `AppIcon` asset-catalog set, drawn from the same whale as
 
 ## Alternatives considered
 
-**Distribute a DMG.** A DMG changes presentation, not trust: an ad-hoc signature still fails Gatekeeper after download. It belongs with the notarized build.
+**Distribute a DMG.** A DMG changes presentation, not trust: an ad-hoc signature still fails Gatekeeper after download. Packaging emits that DMG anyway so [this fork can attach it to a GitHub Release](2026-08-14-macos-dmg-github-release.md); notarization is still required before Gatekeeper will accept a download without `xattr`.
 
 **Enable Hardened Runtime now and add `com.apple.security.cs.disable-library-validation`.** That entitlement is the shortest path to a notarized build, but it is a public-release decision that also needs a Developer ID certificate and a `notarytool` key. Neither is required to hand a colleague a build today.
 
@@ -38,8 +38,8 @@ The app icon is a real `AppIcon` asset-catalog set, drawn from the same whale as
 
 ## Consequences
 
-**Bought:** any Apple Silicon Mac on macOS 14 or later can run the product window from one zip, with no clone, Node, or pnpm. A build that would fail on a tester's machine for a missing or unsealed nested host fails during packaging instead. Version, build number, and revision are printed with the archive, so a tester's report identifies the exact bundle.
+**Bought:** any Apple Silicon Mac on macOS 14 or later can run the product window from one zip or DMG, with no clone, Node, or pnpm. A build that would fail on a tester's machine for a missing or unsealed nested host fails during packaging instead. Version, build number, and revision are printed with the archive, so a tester's report identifies the exact bundle.
 
-**Paid:** the artifact is not distributable to users. Gatekeeper rejects an ad-hoc signature once a download sets the quarantine attribute, so every recipient runs `xattr -dr com.apple.quarantine` — a step that also disarms the check for anything else in that bundle, which is acceptable only for a build handed over directly. The commit count is monotonic on `master` but not across branches, so two branch builds can share a `CFBundleVersion`; a public release needs a tag-derived number. There is no update channel. Linux CI cannot run this script, and the macOS packaging path has no automated coverage beyond `--help`, the non-Darwin refusal, and the `--dry-run` command plan.
+**Paid:** Gatekeeper rejects an ad-hoc signature once a download sets the quarantine attribute, so every recipient runs `xattr -dr com.apple.quarantine` — a step that also disarms the check for anything else in that bundle. [This fork accepts that command on a GitHub Release](2026-08-14-macos-dmg-github-release.md). The commit count is monotonic on `master` but not across branches, so two branch builds can share a `CFBundleVersion`; a public notarized release needs a tag-derived number. There is no update channel. Linux CI cannot run this script; the macOS packaging path has `--help`, the non-Darwin refusal, the `--dry-run` command plan, and the GitHub Actions job that publishes the DMG.
 
 A public release additionally requires a Developer ID Application certificate, `ENABLE_HARDENED_RUNTIME = YES`, `codesign --timestamp` in place of the ad-hoc `--timestamp=none` in [`copy-web-host.sh`](../../../../apps/macos/scripts/copy-web-host.sh), a resolution of the library-validation conflict above, `notarytool submit` with stapling, and a macOS runner job. TCC still gates `~/Documents`, `~/Desktop`, and `~/Downloads` for this unsandboxed app, and the child process does not inherit the `NSOpenPanel` grant, so a workspace under those folders needs its own verification before a public build.
