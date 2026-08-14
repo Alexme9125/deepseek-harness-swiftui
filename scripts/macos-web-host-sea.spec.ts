@@ -69,7 +69,7 @@ describeHost('macos bundled web-host SEA', () => {
 async function freeLoopbackPort(): Promise<number> {
   const server = createServer()
   await new Promise<void>((resolveListen, reject) => {
-    server.listen(0, '127.0.0.1', () => resolveListen())
+    server.listen(0, '127.0.0.1', () => { resolveListen() })
     server.once('error', reject)
   })
   const address = server.address()
@@ -79,7 +79,10 @@ async function freeLoopbackPort(): Promise<number> {
   }
   const { port } = address
   await new Promise<void>((resolveClose, reject) => {
-    server.close(error => error === undefined ? resolveClose() : reject(error))
+    server.close((error) => {
+      if (error === undefined) resolveClose()
+      else reject(error)
+    })
   })
   return port
 }

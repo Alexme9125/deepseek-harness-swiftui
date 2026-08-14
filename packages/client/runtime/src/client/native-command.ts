@@ -83,7 +83,7 @@ export function resolveNativeCommandTarget(
   globalObject: typeof globalThis = globalThis,
 ): EventTarget {
   if (typeof globalObject.addEventListener === 'function') {
-    return globalObject as unknown as EventTarget
+    return globalObject
   }
   return new EventTarget()
 }
@@ -102,7 +102,7 @@ export function installNativeCommandListener(
   const host = globalThis as NativeCommandHost
   const invoke = (detail: unknown): Promise<NativeCommandResult> => invokeNativeCommand(workspaces, target, detail)
   const onEvent = (event: Event): void => {
-    const detail = event instanceof CustomEvent ? event.detail : undefined
+    const detail = event instanceof CustomEvent ? (event as CustomEvent<unknown>).detail : undefined
     const command = parseNativeCommand(detail)
     if (command === undefined || command.name === 'open-settings') return
     void runNativeCommand(workspaces, command)

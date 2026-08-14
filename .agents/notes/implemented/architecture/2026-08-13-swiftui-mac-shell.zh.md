@@ -16,7 +16,7 @@ Status: implemented
 
 该壳不重实现 Client 包，也不新增 IPC `doFetch` 载体。它使用 [GUI 分层说明](2026-07-19-gui-layering-and-rpc-protocol.md) 已经交付的 HTTP 承载。原生 File 菜单操作、`NSOpenPanel` 以及 Dock 或窗口的文件夹拖放，向该页派发同源的 `dsh-native-command` 事件，使 `ctx.workspaces` 与 SettingsRoot 走现有 Web 流程。
 
-`.app` 可以嵌入 `dsh-web-host`，即 web profile 的封闭 `@yao-pkg/pkg --sea` 可执行文件。该产物不是 [`dsh-jsonrpc-agent-pkg`](2026-07-10-single-file-executable-sdk-runtime-distribution.md)：JSON-RPC exe 通过 stdio 启动外部 `cordis.yml`，没有 Host webserver，也没有前端 dist。web-host 的部署根是 [`apps/macos/web-host/package.json`](../../../../apps/macos/web-host/package.json)。其打包入口是 [`apps/cli/src/packaged-bin.ts`](../../../../apps/cli/src/packaged-bin.ts)，它以 `bareModuleBaseUrl` 调用 `runProfile`，使裸插件从 VFS 解析。快照把 sharp 的 libvips 共享库列为 pkg `assets`（`*.dylib`、`*.so`）。`dlopen` 加载 sharp 的 `.node` addon 时，pkg 把 `@img` 目录从 VFS 解到磁盘，dyld 再在该真实路径上跟随 `@rpath`。漏掉这些资源时，磁盘上只有 addon 没有 libvips，宿主在插件初始化期间退出。App Sandbox 保持关闭。
+`.app` 可以嵌入 `dsh-web-host`，即 web profile 的封闭 `@yao-pkg/pkg --sea` 可执行文件。该产物不是 [`dsh-jsonrpc-agent-pkg`](2026-07-10-single-file-executable-sdk-runtime-distribution.md)：JSON-RPC exe 通过 stdio 启动外部 `cordis.yml`，没有 Host webserver，也没有前端 dist。web-host 的部署根是 [`apps/macos/web-host/package.json`](../../../../apps/macos/web-host/package.json)。其打包入口是 [`apps/cli/src/packaged-bin.ts`](../../../../apps/cli/src/packaged-bin.ts)，它以 `bareModuleBaseUrl` 调用 `runProfile`，使裸插件从 VFS 解析，包括之后对裸包名的 `loader.create`（例如 directory-picker 后端）（[宿主父 URL](../bug-fix/2026-08-14-loader-create-honors-bare-module-base.md)）。client-modules 的 Node 半边在 profile 目录解析不到时，从同一封闭树解析每个 `dsh.client` 的 `package.json`（[宿主包查找](../bug-fix/2026-08-14-client-modules-host-package-resolve.md)）。快照把 sharp 的 libvips 共享库列为 pkg `assets`（`*.dylib`、`*.so`）。`dlopen` 加载 sharp 的 `.node` addon 时，pkg 把 `@img` 目录从 VFS 解到磁盘，dyld 再在该真实路径上跟随 `@rpath`。漏掉这些资源时，磁盘上只有 addon 没有 libvips，宿主在插件初始化期间退出。preset 发现用 `readdir` 名字加 `stat` 列出快照根目录，因为 pkg `--sea` 即使带 `withFileTypes` 也返回字符串（[preset 名单](../bug-fix/2026-08-14-pkg-sea-readdir-returns-names.md)）。App Sandbox 保持关闭。
 
 ## Launch contract
 
@@ -27,11 +27,11 @@ Status: implemented
 3. `DSH_REPO`、由 `#filePath` 得到的编译期 checkout、或进程工作目录，当该树包含 `apps/cli/src/bin.ts` 时——然后执行 `node --import tsx/esm apps/cli/src/bin.ts web`，与 `pnpm dsh` 同一向量。
 4. 在包含 login-shell PATH、`/opt/homebrew/bin` 和 `/usr/local/bin` 的 PATH 上查找 `dsh`。
 
-该壳绑定一个空闲的 `127.0.0.1` 端口，关闭探测套接字，并传入 `--host 127.0.0.1 --port <n>`。就绪条件是对 `http://127.0.0.1:<n>/` 的 `GET /` 成功。WebView 必须打开该 IPv4 loopback 源，而不是 `localhost`，以便现有 `/api` 信任栅栏仍把该页视为 loopback。退出时向子进程发送 SIGTERM，若未退出再发送 SIGKILL。
+该壳绑定一个空闲的 `127.0.0.1` 端口，关闭探测套接字，并传入 `--host 127.0.0.1 --port <n>`。就绪条件是对 `http://127.0.0.1:<n>/` 的 `GET /` 成功。等待期间先 `connect` TCP 直到端口接受连接，再发该 GET，这样 CFNetwork 不会为关闭套接字之后、`dsh` 开始监听之前的窗口记录 connection-refused。WebView 必须打开该 IPv4 loopback 源，而不是 `localhost`，以便现有 `/api` 信任栅栏仍把该页视为 loopback。退出时向子进程发送 SIGTERM，若未退出再发送 SIGKILL。
 
 子进程工作目录在已设置时为 `DSH_CWD`，否则为解析到的仓库根，否则为用户 home。从 Finder 启动的应用不得把 `/` 继承为默认 workspace 根。子进程环境复制父进程，但去掉 `DYLD_*` 与 `__XPC_DYLD_*`：Xcode 调试父进程时会插入 `DYLD_INSERT_LIBRARIES`，Node SEA 随后从被插入的镜像读取 `NODE_SEA_BLOB` 并以 `kMagic` 中止。
 
-Xcode scheme 在缺少 `apps/macos/dist/dsh-web-host` 时于首次 Run 打包它。Xcode 将 SRCROOT 设为 `apps/macos`；scheme 的 pre-action 与启动工作目录把 checkout 解析为 SRCROOT 之上、且包含 `apps/cli/src/bin.ts` 的祖先目录。Linux CI 无法产出 `node24-macos-arm64`。Intel Mac 不在范围内。
+Xcode scheme 在缺少 `apps/macos/dist/dsh-web-host` 时于首次 Run 打包它。Xcode 将 SRCROOT 设为 `apps/macos`；scheme 的 pre-action 与启动工作目录把 checkout 解析为 SRCROOT 之上、且包含 `apps/cli/src/bin.ts` 的祖先目录。[`scripts/copy-web-host.sh`](../../../../apps/macos/scripts/copy-web-host.sh) 把宿主复制进 `Contents/MacOS` 并做 ad-hoc 签名。完整链接时该脚本先于 Xcode CodeSign 运行，此时主可执行文件与 `DeepSeekHarness.debug.dylib` 仍未签名，立刻重新封存会以 `code object is not signed at all` 失败。增量构建会跳过 CodeSign；脚本在替换嵌套 helper *之前* 探测主可执行文件，探测成功才重新封存 `.app`。拷贝之后对同一 Mach-O 做 `codesign --verify` 会跟随已失效的 bundle 封存。未封存就被替换的嵌套 helper 会以 SIGKILL 退出（status 9，`Code Signature Invalid`）。helper 不以 Hardened Runtime 签名：pkg 会把未签名的 `.node` 解到 `~/.cache/pkg`。Linux CI 无法产出 `node24-macos-arm64`。Intel Mac 不在范围内。
 
 ## Native command contract
 
