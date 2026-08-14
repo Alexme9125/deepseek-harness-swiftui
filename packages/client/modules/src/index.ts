@@ -146,6 +146,38 @@ function shortHash(input: string | Buffer): string {
   return createHash('sha1').update(input).digest('hex').slice(0, 12)
 }
 
+/**
+ * Resolve `package.json` for a Loader entry name. Source launch uses the
+ * profile directory (healed `$DSH_HOME/profiles/node_modules`). A closed
+ * packaged host does not create those links, and pkg's resolver will not walk
+ * them from a profile `baseUrl`, so a miss falls through to this package's own
+ * tree — the hoisted VFS / deployed `node_modules`. Snapshot URLs prefer
+ * the host first so a leftover on-disk fallback cannot shadow the closed set.
+ * @param configBaseUrl - Loader `baseUrl` (the configuration directory).
+ * @returns a resolver that throws when neither tree contains the package.
+ */
+function packageJsonResolver(configBaseUrl: string): (spec: string) => string {
+  const fromConfig = createRequire(configBaseUrl)
+  const fromHost = createRequire(import.meta.url)
+  return (spec: string): string => {
+    const id = `${spec}/package.json`
+    /* v8 ignore start -- pkg SEA sets import.meta.url under `/snapshot/`; unit tests run from source. */
+    if (import.meta.url.includes('/snapshot/') || import.meta.url.includes('\\snapshot\\')) {
+      return fromHost.resolve(id)
+    }
+    /* v8 ignore stop */
+    try {
+      return fromConfig.resolve(id)
+    } catch (configError) {
+      try {
+        return fromHost.resolve(id)
+      } catch {
+        throw configError
+      }
+    }
+  }
+}
+
 /** Graph row for one bundle rev (url carries the rev as its cache-busting query). */
 function graphRow(id: string, rev: string, injectEdges: string[] | undefined, immediately: boolean): WebBootEntry {
   return {
@@ -202,15 +234,12 @@ export class ClientModuleRegistry extends Service {
    */
   constructor(ctx: Context) {
     super(ctx, 'clientModules')
-    // Resolution anchor: the config tree's baseUrl (the cordis.yml directory,
-    // whose package declares every composed plugin as a dependency). The
-    // modules package's own URL would miss sibling packages under pnpm's
-    // isolated node_modules.
+    // Source launch resolves from the config directory (healed profile
+    // `node_modules`). A closed packaged host falls through to this package.
     if (ctx.baseUrl === undefined) {
       throw new Error('client-modules: ctx.baseUrl is unset — the node half needs the config-tree anchor to resolve plugin packages')
     }
-    const require = createRequire(ctx.baseUrl)
-    this.resolvePkgJson = spec => require.resolve(`${spec}/package.json`)
+    this.resolvePkgJson = packageJsonResolver(ctx.baseUrl)
 
     // Subscribe before seeding so a fiber arriving mid-activation lands in the
     // same dirty set (Set idempotence makes the overlap harmless). An entry-less

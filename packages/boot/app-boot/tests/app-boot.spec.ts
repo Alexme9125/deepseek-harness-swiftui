@@ -625,6 +625,55 @@ describe('boot', () => {
     }
   })
 
+  it('resolves loader.create bare plugins from the harness when bareModuleBaseUrl is set', async () => {
+    const dir = tmp()
+    const harness = tmp()
+    const writePlugin = (root: string, id: string, slot: string) => {
+      const pkg = join(root, 'node_modules', '@deepseek-ai', id)
+      mkdirSync(pkg, { recursive: true })
+      writeFileSync(join(pkg, 'package.json'), JSON.stringify({
+        name: `@deepseek-ai/${id}`,
+        type: 'module',
+        exports: './index.mjs',
+      }))
+      writeFileSync(join(pkg, 'index.mjs'), [
+        'export function apply(ctx) {',
+        `  ctx.provide(${JSON.stringify(slot)}, true)`,
+        '}',
+        '',
+      ].join('\n'))
+    }
+    writePlugin(dir, 'dsh-created-bare', 'shadowCreatedLoaded')
+    writePlugin(harness, 'dsh-created-bare', 'hostCreatedLoaded')
+    writeFileSync(join(dir, 'noop.mjs'), 'export function apply() {}\n')
+    writeFileSync(join(dir, 'created-relative.mjs'), [
+      'export function apply(ctx) { ctx.provide("createdRelativeLoaded", true) }',
+      '',
+    ].join('\n'))
+    const createdAbsolute = join(dir, 'created-absolute.mjs')
+    writeFileSync(createdAbsolute, [
+      'export function apply(ctx) { ctx.provide("createdAbsoluteLoaded", true) }',
+      '',
+    ].join('\n'))
+    writeFileSync(join(dir, 'cordis.yml'), '- id: noop\n  name: ./noop.mjs\n')
+    const harnessBaseUrl = pathToFileURL(join(harness, 'entry.mjs')).href
+    const ctx = await boot(NAME, join(dir, 'cordis.yml'), undefined, undefined, harnessBaseUrl)
+    try {
+      expect(ctx.loader.internal?.version).toMatch(/^v[12]$/)
+      expect(typeof ctx.loader.internal?.register).toBe('function')
+      await ctx.loader.create({ name: '@deepseek-ai/dsh-created-bare' })
+      await ctx.loader.create({ name: './created-relative.mjs' })
+      await ctx.loader.create({ name: createdAbsolute })
+      await ctx.loader.await()
+      expect(ctx.get('hostCreatedLoaded')).toBe(true)
+      expect(ctx.get('shadowCreatedLoaded')).toBeUndefined()
+      expect(ctx.get('createdRelativeLoaded')).toBe(true)
+      expect(ctx.get('createdAbsoluteLoaded')).toBe(true)
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
   it('runs host preparation before the Loader tree mounts', async () => {
     const dir = tmp()
     writeFileSync(join(dir, 'noop.mjs'), 'export const name = "noop"\nexport function apply() {}\n')

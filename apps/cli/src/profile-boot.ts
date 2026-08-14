@@ -310,15 +310,11 @@ export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Con
       // documented hot-reload contract. HMR injects the timer service, which a
       // bare custom profile may not mount either.
       if (ctx.get('hmr') === undefined) {
-        // Include honors `bareModuleBaseUrl`; `loader.create` still resolves
-        // against the profile directory, so a closed runtime needs host URLs.
-        const pluginName = (specifier: string): string =>
-          options.bareModuleBaseUrl === undefined ? specifier : import.meta.resolve(specifier)
         if (ctx.get('timer') === undefined) {
-          await ctx.loader.create({ name: pluginName('@deepseek-ai/cordis-plugin-timer') })
+          await ctx.loader.create({ name: '@deepseek-ai/cordis-plugin-timer' })
         }
         await ctx.loader.create({
-          name: pluginName('@deepseek-ai/cordis-plugin-hmr'),
+          name: '@deepseek-ai/cordis-plugin-hmr',
           config: { root: [] },
         })
       }

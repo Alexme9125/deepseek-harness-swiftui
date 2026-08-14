@@ -32,7 +32,7 @@ From `apps/macos`:
 xcodebuild -scheme DeepSeekHarness -configuration Debug -destination 'platform=macOS,arch=arm64' build
 ```
 
-The `.app` lands under Xcode's DerivedData. [`scripts/copy-web-host.sh`](scripts/copy-web-host.sh) copies `dist/dsh-web-host` and `dist/dsh-web-host-spawn-helper` into `Contents/MacOS` when they exist. This Linux CI checkout cannot run `xcodebuild` or produce the macos-arm64 executable.
+The `.app` lands under Xcode's DerivedData. [`scripts/copy-web-host.sh`](scripts/copy-web-host.sh) copies `dist/dsh-web-host` and `dist/dsh-web-host-spawn-helper` into `Contents/MacOS` when they exist and signs those nested binaries. Incremental Runs also reseal the `.app` so macOS does not SIGKILL the host (status 9). A full link leaves sealing to Xcode CodeSign; resealing while the main binary is still unsigned fails the build (`code object is not signed at all`). This Linux CI checkout cannot run `xcodebuild` or produce the macos-arm64 executable.
 
 ## Runtime resolution
 
@@ -76,3 +76,4 @@ Dropping a folder on the Dock icon, the window, or a `file://` navigation into t
 - Intel Macs are out of this checkout. The bundled host target is `node24-macos-arm64` only.
 - A bundled host is a closed plugin set. Extra packages in `~/.dsh/profiles/web` that are not in the VFS do not load.
 - Linux CI does not compile this project or emit the macos-arm64 executable.
+- Xcode's console prints WebKit WebContent sandbox denials and App Intents `linkd.autoShortcut` XPC failures; they are not launch failures.

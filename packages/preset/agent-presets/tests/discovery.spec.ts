@@ -7,6 +7,7 @@ import { COMPOSITION_FILE, discoverPresets, scanRoot } from '@deepseek-ai/dsh-ag
 
 const fsHarness = vi.hoisted(() => ({
   nextReadError: undefined as NodeJS.ErrnoException | undefined,
+  readdirEntries: undefined as string[] | undefined,
 }))
 
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -21,6 +22,14 @@ vi.mock('node:fs/promises', async (importOriginal) => {
       }
       return (actual.readFile as (path: unknown, ...args: never[]) => Promise<unknown>)(path, ...rest)
     }) as typeof actual.readFile,
+    readdir: (async (path: unknown, options?: unknown) => {
+      if (fsHarness.readdirEntries !== undefined) {
+        const entries = fsHarness.readdirEntries
+        fsHarness.readdirEntries = undefined
+        return entries
+      }
+      return (actual.readdir as (path: unknown, options?: unknown) => Promise<unknown>)(path, options)
+    }) as typeof actual.readdir,
   }
 })
 
@@ -30,6 +39,7 @@ const USER = { path: join(FIXTURES, 'user'), trust: 'user' as const }
 
 beforeEach(() => {
   fsHarness.nextReadError = undefined
+  fsHarness.readdirEntries = undefined
 })
 
 describe('display order', () => {
@@ -133,6 +143,37 @@ describe('preset discovery', () => {
     const found = await scanRoot({ path: root, trust: 'user' })
 
     expect(found.map(preset => preset.id)).toEqual(['real'])
+  })
+
+  it('discovers presets when readdir yields names as strings', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-presets-pkg-names-'))
+    await mkdir(join(root, 'usable'))
+    await writeFile(join(root, 'usable', COMPOSITION_FILE), '[]\n')
+    await writeFile(join(root, 'stray.yml'), '- id: x\n')
+    // @yao-pkg/pkg --sea readdir returns strings with or without withFileTypes.
+    fsHarness.readdirEntries = ['usable', 'stray.yml']
+
+    const found = await scanRoot({ path: root, trust: 'user' })
+
+    expect(found.map(preset => preset.id)).toEqual(['usable'])
+  })
+
+  it('does not treat a sibling file whose name is a usable preset id as a preset', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-presets-file-id-'))
+    await writeFile(join(root, 'usable'), 'not a directory\n')
+
+    const found = await scanRoot({ path: root, trust: 'user' })
+
+    expect(found).toEqual([])
+  })
+
+  it('skips a readdir name that cannot be statted as a directory', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-presets-ghost-name-'))
+    fsHarness.readdirEntries = ['ghost']
+
+    const found = await scanRoot({ path: root, trust: 'user' })
+
+    expect(found).toEqual([])
   })
 
   it('reports a root it cannot read rather than treating it as empty', async () => {
