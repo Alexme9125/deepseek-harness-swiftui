@@ -34,6 +34,28 @@ xcodebuild -scheme DeepSeekHarness -configuration Debug -destination 'platform=m
 
 `.app` 落在 Xcode 的 DerivedData 中。[`scripts/copy-web-host.sh`](scripts/copy-web-host.sh) 在 `dist/dsh-web-host` 与 `dist/dsh-web-host-spawn-helper` 存在时把它们复制进 `Contents/MacOS`。此 Linux CI checkout 无法运行 `xcodebuild`，也无法产出 macos-arm64 可执行文件。
 
+## 内部分发
+
+`pnpm run package:macos-app` 对 `arm64` 做 Release 构建，并写出 `apps/macos/dist/release/DeepSeekHarness-<版本>-<构建号>-arm64.zip`。该二进制缺失时它先打包 `dsh-web-host`，因为 `xcodebuild` 不执行 scheme pre-action。归档之前它要求两个嵌套可执行文件都在、`codesign --verify --deep --strict` 通过，并跑一次捆绑宿主的 `--help`。传 `--dry-run` 打印计划，或传 `--skip-web-host` 要求使用已有宿主而不重新打包。
+
+接收方需要 macOS 14 或更高版本的 Apple Silicon 机器，不需要 Node。该 bundle 是 ad-hoc 签名，因此下载设置 quarantine 属性之后 Gatekeeper 会拒绝它：
+
+```sh
+xattr -dr com.apple.quarantine /Applications/DeepSeekHarness.app
+```
+
+这让该产物适合交给同事的构建，而不适合公开下载。决策记录与公开发布所需条件：[内部分发](../../.agents/notes/implemented/architecture/2026-08-14-macos-internal-distribution.md)。
+
+## 应用图标
+
+[`Assets.xcassets`](DeepSeekHarness/Assets.xcassets) 中的 `AppIcon` 持有 macOS 的十个槽位。用一张不小于 1024×1024 的方形 PNG 填满它们：
+
+```sh
+apps/macos/scripts/make-app-icon.sh path/to/icon.png
+```
+
+该脚本写出缩放后的 PNG，并用它们的文件名重写 `Contents.json`。在它运行之前槽位为空，构建会发出缺少图标的警告。
+
 ## 运行时解析
 
 壳按第一次命中：
@@ -73,6 +95,6 @@ File 菜单向已加载的 Web 客户端发送同源命令（`dsh-native-command
 ## 限制
 
 - App Sandbox 关闭，以便子进程能读取 workspace 目录和 `$DSH_HOME`。
-- Intel Mac 不属于本 checkout。捆绑宿主的目标仅是 `node24-macos-arm64`。
+- Intel Mac 不属于本 checkout。两个配置都把 `ARCHS` 钉为 `arm64`，因为 macOS 的默认值会构建出一个 universal 应用，而它的 Intel 分片会去 exec 只有 arm64 的宿主。
 - 捆绑宿主是封闭插件集。`~/.dsh/profiles/web` 中不在 VFS 里的额外包不会加载。
 - Linux CI 不编译此工程，也不产出 macos-arm64 可执行文件。

@@ -34,6 +34,28 @@ xcodebuild -scheme DeepSeekHarness -configuration Debug -destination 'platform=m
 
 The `.app` lands under Xcode's DerivedData. [`scripts/copy-web-host.sh`](scripts/copy-web-host.sh) copies `dist/dsh-web-host` and `dist/dsh-web-host-spawn-helper` into `Contents/MacOS` when they exist. This Linux CI checkout cannot run `xcodebuild` or produce the macos-arm64 executable.
 
+## Internal distribution
+
+`pnpm run package:macos-app` builds Release for `arm64` and writes `apps/macos/dist/release/DeepSeekHarness-<version>-<build>-arm64.zip`. It packages `dsh-web-host` first when that binary is missing, because `xcodebuild` does not run the scheme pre-actions. Before archiving it requires both nested executables, a passing `codesign --verify --deep --strict`, and a `--help` run of the bundled host. Pass `--dry-run` to print the plan, or `--skip-web-host` to require the existing host instead of packaging one.
+
+A recipient needs macOS 14 or later on Apple Silicon and no Node. The bundle is ad-hoc signed, so Gatekeeper rejects it once a download sets the quarantine attribute:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/DeepSeekHarness.app
+```
+
+That makes the artifact suitable for a build handed to a colleague, not for public download. Decision record and the public-release requirements: [internal distribution](../../.agents/notes/implemented/architecture/2026-08-14-macos-internal-distribution.md).
+
+## App icon
+
+`AppIcon` in [`Assets.xcassets`](DeepSeekHarness/Assets.xcassets) holds the ten macOS slots. Fill them from one square PNG of at least 1024×1024:
+
+```sh
+apps/macos/scripts/make-app-icon.sh path/to/icon.png
+```
+
+The script writes the resized PNGs and rewrites `Contents.json` with their filenames. Until it runs, the slots are empty and the build emits a missing-icon warning.
+
 ## Runtime resolution
 
 The shell uses the first match:
@@ -73,6 +95,6 @@ Dropping a folder on the Dock icon, the window, or a `file://` navigation into t
 ## Limits
 
 - App Sandbox is off so the child can read workspace directories and `$DSH_HOME`.
-- Intel Macs are out of this checkout. The bundled host target is `node24-macos-arm64` only.
+- Intel Macs are out of this checkout. Both configurations pin `ARCHS = arm64`, because the macOS default would build a universal app whose Intel slice execs an arm64-only host.
 - A bundled host is a closed plugin set. Extra packages in `~/.dsh/profiles/web` that are not in the VFS do not load.
 - Linux CI does not compile this project or emit the macos-arm64 executable.
