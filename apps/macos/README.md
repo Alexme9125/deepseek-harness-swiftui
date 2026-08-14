@@ -48,13 +48,15 @@ That makes the artifact suitable for a build handed to a colleague, not for publ
 
 ## App icon
 
-`AppIcon` in [`Assets.xcassets`](DeepSeekHarness/Assets.xcassets) holds the ten macOS slots. Fill them from one square PNG of at least 1024×1024:
+`AppIcon` in [`Assets.xcassets`](DeepSeekHarness/Assets.xcassets) holds the ten macOS slots. The mark is the whale from [`website/public/favicon.svg`](../../website/public/favicon.svg) in white, centered on a `#4D6BFE` superellipse body that fills 824 of the 1024 canvas — the Apple icon grid's margins — at 66% of that body. `icon_512x512@2x.png` is the 1024 master.
+
+Replace the icon from one square PNG of at least 1024×1024:
 
 ```sh
 apps/macos/scripts/make-app-icon.sh path/to/icon.png
 ```
 
-The script writes the resized PNGs and rewrites `Contents.json` with their filenames. Until it runs, the slots are empty and the build emits a missing-icon warning.
+The script resizes the source into every slot and rewrites `Contents.json`. It does not add a background or margins, so a source that is a bare full-bleed glyph produces an icon that looks oversized in the Dock and disappears against it when the glyph is dark.
 
 ## Runtime resolution
 

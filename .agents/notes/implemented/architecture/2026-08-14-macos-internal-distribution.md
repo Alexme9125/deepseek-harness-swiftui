@@ -20,7 +20,7 @@ Before archiving it requires both nested executables (`dsh-web-host`, `dsh-web-h
 
 Both build configurations pin `ARCHS = arm64`. The macOS default is `arm64 x86_64`, which would produce a universal app whose Intel slice execs an arm64-only host.
 
-The app icon is a real `AppIcon` asset-catalog set. [`scripts/make-app-icon.sh`](../../../../apps/macos/scripts/make-app-icon.sh) fills its ten slots from one square source PNG with `sips`.
+The app icon is a real `AppIcon` asset-catalog set, drawn from the same whale as [`website/public/favicon.svg`](../../../../website/public/favicon.svg): white on a `#4D6BFE` superellipse body at the Apple icon grid's 824-of-1024 margins. A macOS icon supplies its own rounded body, so a bare full-bleed glyph would read as oversized in the Dock, and a dark one would vanish into it. [`scripts/make-app-icon.sh`](../../../../apps/macos/scripts/make-app-icon.sh) refills the ten slots from one square source PNG with `sips`.
 
 ## Alternatives considered
 

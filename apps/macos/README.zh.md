@@ -48,13 +48,15 @@ xattr -dr com.apple.quarantine /Applications/DeepSeekHarness.app
 
 ## 应用图标
 
-[`Assets.xcassets`](DeepSeekHarness/Assets.xcassets) 中的 `AppIcon` 持有 macOS 的十个槽位。用一张不小于 1024×1024 的方形 PNG 填满它们：
+[`Assets.xcassets`](DeepSeekHarness/Assets.xcassets) 中的 `AppIcon` 持有 macOS 的十个槽位。标识是 [`website/public/favicon.svg`](../../website/public/favicon.svg) 中的鲸鱼取白色，居中放在一个 `#4D6BFE` 的超椭圆主体上；该主体在 1024 画布中占 824——即 Apple 图标网格的留白——标识占该主体的 66%。`icon_512x512@2x.png` 就是 1024 母版。
+
+用一张不小于 1024×1024 的方形 PNG 替换图标：
 
 ```sh
 apps/macos/scripts/make-app-icon.sh path/to/icon.png
 ```
 
-该脚本写出缩放后的 PNG，并用它们的文件名重写 `Contents.json`。在它运行之前槽位为空，构建会发出缺少图标的警告。
+该脚本把源图缩放进每个槽位并重写 `Contents.json`。它不会添加背景或留白，所以当源图是一个铺满画布的裸图形时，产出的图标在 Dock 里会显得过大，而深色图形还会与 Dock 背景融为一体。
 
 ## 运行时解析
 

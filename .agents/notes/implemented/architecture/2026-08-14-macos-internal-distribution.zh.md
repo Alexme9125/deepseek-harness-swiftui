@@ -20,7 +20,7 @@ Status: implemented
 
 两个构建配置都把 `ARCHS` 钉为 `arm64`。macOS 的默认值是 `arm64 x86_64`，那会产出一个 universal 应用，而它的 Intel 分片会去 exec 只有 arm64 的 host。
 
-应用图标是真实的 `AppIcon` 资源目录集合。[`scripts/make-app-icon.sh`](../../../../apps/macos/scripts/make-app-icon.sh) 用 `sips` 从一张方形源 PNG 填满它的十个槽位。
+应用图标是真实的 `AppIcon` 资源目录集合，取自与 [`website/public/favicon.svg`](../../../../website/public/favicon.svg) 相同的那条鲸鱼：白色标识放在 `#4D6BFE` 的超椭圆主体上，留白按 Apple 图标网格的 824/1024。macOS 图标要自带圆角主体，所以一个铺满画布的裸图形在 Dock 里会显得过大，深色图形还会消失在其中。[`scripts/make-app-icon.sh`](../../../../apps/macos/scripts/make-app-icon.sh) 用 `sips` 从一张方形源 PNG 重新填满这十个槽位。
 
 ## Alternatives considered
 
