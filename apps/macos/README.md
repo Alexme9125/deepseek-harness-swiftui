@@ -34,6 +34,30 @@ xcodebuild -scheme DeepSeekHarness -configuration Debug -destination 'platform=m
 
 The `.app` lands under Xcode's DerivedData. [`scripts/copy-web-host.sh`](scripts/copy-web-host.sh) copies `dist/dsh-web-host` and `dist/dsh-web-host-spawn-helper` into `Contents/MacOS` when they exist and signs those nested binaries. Incremental Runs also reseal the `.app` so macOS does not SIGKILL the host (status 9). A full link leaves sealing to Xcode CodeSign; resealing while the main binary is still unsigned fails the build (`code object is not signed at all`). This Linux CI checkout cannot run `xcodebuild` or produce the macos-arm64 executable.
 
+## Internal distribution
+
+`pnpm run package:macos-app` builds Release for `arm64` and writes `apps/macos/dist/release/DeepSeekHarness-<version>-<build>-arm64.zip`. It packages `dsh-web-host` first when that binary is missing, because `xcodebuild` does not run the scheme pre-actions. Before archiving it requires both nested executables, a passing `codesign --verify --deep --strict`, and a `--help` run of the bundled host. Pass `--dry-run` to print the plan, or `--skip-web-host` to require the existing host instead of packaging one.
+
+A recipient needs macOS 14 or later on Apple Silicon and no Node. The bundle is ad-hoc signed, so Gatekeeper rejects it once a download sets the quarantine attribute:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/DeepSeekHarness.app
+```
+
+That makes the artifact suitable for a build handed to a colleague, not for public download. Decision record and the public-release requirements: [internal distribution](../../.agents/notes/implemented/architecture/2026-08-14-macos-internal-distribution.md).
+
+## App icon
+
+`AppIcon` in [`Assets.xcassets`](DeepSeekHarness/Assets.xcassets) holds the ten macOS slots. The mark is the whale from [`website/public/favicon.svg`](../../website/public/favicon.svg) in white, centered on a `#4D6BFE` superellipse body that fills 824 of the 1024 canvas — the Apple icon grid's margins — at 66% of that body. `icon_512x512@2x.png` is the 1024 master.
+
+Replace the icon from one square PNG of at least 1024×1024:
+
+```sh
+apps/macos/scripts/make-app-icon.sh path/to/icon.png
+```
+
+The script resizes the source into every slot and rewrites `Contents.json`. It does not add a background or margins, so a source that is a bare full-bleed glyph produces an icon that looks oversized in the Dock and disappears against it when the glyph is dark.
+
 ## Runtime resolution
 
 The shell uses the first match:
@@ -73,7 +97,7 @@ Dropping a folder on the Dock icon, the window, or a `file://` navigation into t
 ## Limits
 
 - App Sandbox is off so the child can read workspace directories and `$DSH_HOME`.
-- Intel Macs are out of this checkout. The bundled host target is `node24-macos-arm64` only.
+- Intel Macs are out of this checkout. Both configurations pin `ARCHS = arm64`, because the macOS default would build a universal app whose Intel slice execs an arm64-only host.
 - A bundled host is a closed plugin set. Extra packages in `~/.dsh/profiles/web` that are not in the VFS do not load.
 - Linux CI does not compile this project or emit the macos-arm64 executable.
 - Xcode's console prints WebKit WebContent sandbox denials and App Intents `linkd.autoShortcut` XPC failures; they are not launch failures.
