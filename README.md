@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-This checkout is a **personal** macOS packaging of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). It is not an official [DeepSeek AI](https://deepseek.com) product, and it is not an official Darwin Anime Club product.
+This repository is Alex Xiao's **personal** macOS packaging of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). It is not an official [DeepSeek AI](https://deepseek.com) product, and it is not an official Darwin Anime Club product.
 
 Alex (Alex Xiao) is a member of the Darwin Anime Club (Darwin 动漫社) technical department. This repository is Alex's personal project. A large part of the code here was written in [Cursor](https://cursor.com) with Grok and Composer.
 
@@ -10,7 +10,7 @@ Alex (Alex Xiao) is a member of the Darwin Anime Club (Darwin 动漫社) technic
 
 DeepSeek Harness (`dsh`) is an open-source agent harness whose architecture is **everything is a plugin**, powered by [Cordis](https://github.com/cordiverse/cordis). The design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://github.com/cordiverse/paper).
 
-This fork adds a SwiftUI macOS app that launches the existing `web` profile on `127.0.0.1` and shows that Web UI in WKWebView. The `.app` bundles `dsh-web-host`, so a recipient does not need a system Node install.
+This fork adds a SwiftUI macOS app that launches the existing `web` profile on `127.0.0.1` and shows that Web UI in WKWebView. The `.app` bundles `dsh-web-host`, so you do not need a system Node install.
 
 ## Developer preview
 
@@ -29,7 +29,7 @@ xattr -dr com.apple.quarantine /Applications/DeepSeekHarness.app
 
 3. Open the app. Choose a workspace. In Settings, add a DeepSeek API key.
 
-Requires macOS 14 or later on Apple Silicon. No Node installation is needed. Decision records: [internal distribution](.agents/notes/implemented/architecture/2026-08-14-macos-internal-distribution.md), [GitHub Release DMG](.agents/notes/implemented/architecture/2026-08-14-macos-dmg-github-release.md).
+Requires macOS 14 or later on Apple Silicon. No Node installation is needed.
 
 ## Plugins
 
@@ -50,7 +50,7 @@ That path uses Node's resolver against a real `node_modules` tree. It is the sup
 
 ### Rebuild the `.app` with extra plugins
 
-Add a `workspace:` dependency on [`apps/macos/web-host/package.json`](apps/macos/web-host/package.json), then re-package so the new package is copied into the SEA snapshot. See [macOS app](apps/macos/README.md). Recipients of the previous DMG do not pick up that plugin until they install the new build.
+Add a `workspace:` dependency on [`apps/macos/web-host/package.json`](apps/macos/web-host/package.json), then re-package so the new package is copied into the SEA snapshot. See [macOS app](apps/macos/README.md). Anyone still on the previous DMG does not pick up that plugin until they install the new build.
 
 <a id="run"></a>
 
@@ -86,7 +86,7 @@ On macOS 14+ / Apple Silicon, open [`apps/macos/DeepSeekHarness.xcodeproj`](apps
 
 ## Origin
 
-The harness source is a fork of [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness), developed by DeepSeek AI. This fork keeps that plugin architecture and adds the SwiftUI product window plus the GitHub Release DMG.
+The harness source is a fork of [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness), developed by DeepSeek AI. This fork keeps that plugin architecture and adds the SwiftUI product window.
 
 Upstream community channels and contribution policy remain on the [upstream repository](https://github.com/deepseek-ai/deepseek-harness). This personal fork does not replace them.
 

@@ -2,15 +2,15 @@
 
 [English](README.md) | 中文
 
-本 checkout 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的**个人** macOS 打包。它不是 [DeepSeek AI](https://deepseek.com) 的官方产品，也不是 Darwin 动漫社的官方产品。
+本仓库是 Alex Xiao 对 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的**个人** macOS 打包。它不是 [DeepSeek AI](https://deepseek.com) 的官方产品，也不是 Darwin 动漫社的官方产品。
 
-Alex（Alex Xiao）是 Darwin 动漫社技工部成员。本仓库是 Alex 的个人项目。这里的大量代码是在 [Cursor](https://cursor.com) 中用 Grok 和 Composer 编写的。
+Alex（Alex Xiao）是 Darwin 动漫社技术部成员。本仓库是 Alex 的个人项目。这里的大量代码是在 [Cursor](https://cursor.com) 中用 Grok 和 Composer 编写的。
 
 ## 它做什么
 
 DeepSeek Harness（`dsh`）是开源 agent harness（智能体框架），架构为**一切皆插件**，由 [Cordis](https://github.com/cordiverse/cordis) 驱动。设计参见论文 [_A Programming Paradigm for Spatiotemporal Composability_](https://github.com/cordiverse/paper)。
 
-本 fork 增加了一个 SwiftUI macOS 应用：把现有 `web` profile 启动在 `127.0.0.1` 上，并在 WKWebView 中显示同一套 Web UI。`.app` 内捆绑 `dsh-web-host`，因此接收方不需要系统安装 Node。
+本 fork 增加了一个 SwiftUI macOS 应用：把现有 `web` profile 启动在 `127.0.0.1` 上，并在 WKWebView 中显示同一套 Web UI。`.app` 内捆绑 `dsh-web-host`，因此你不需要系统安装 Node。
 
 ## 开发者预览
 
@@ -29,7 +29,7 @@ xattr -dr com.apple.quarantine /Applications/DeepSeekHarness.app
 
 3. 打开应用。选择 workspace。在设置中添加 DeepSeek API key。
 
-需要 Apple Silicon 上的 macOS 14 或更高版本。不需要安装 Node。决策记录：[内部分发](.agents/notes/implemented/architecture/2026-08-14-macos-internal-distribution.md)、[GitHub Release DMG](.agents/notes/implemented/architecture/2026-08-14-macos-dmg-github-release.md)。
+需要 Apple Silicon 上的 macOS 14 或更高版本。不需要安装 Node。
 
 ## 插件
 
@@ -39,7 +39,7 @@ xattr -dr com.apple.quarantine /Applications/DeepSeekHarness.app
 
 ### 从源码运行，然后 `dsh plugin add`
 
-克隆本仓库，完成[从源码运行](#run-from-source)，并遵循[打包并安装插件](docs/user/develop/basic/publish.md)。在 checkout 中：
+克隆本仓库，完成[从源码运行](#run-from-source)，并遵循[打包并安装插件](docs/user/develop/basic/publish.md)。在本仓库目录中：
 
 ```sh
 pnpm dsh plugin --profile web add <package>
@@ -50,7 +50,7 @@ pnpm dsh web
 
 ### 带着额外插件重建 `.app`
 
-在 [`apps/macos/web-host/package.json`](apps/macos/web-host/package.json) 增加一行 `workspace:` 依赖，然后重新打包，使新包进入 SEA 快照。见 [macOS 应用](apps/macos/README.md)。上一份 DMG 的接收方在安装新构建之前不会获得该插件。
+在 [`apps/macos/web-host/package.json`](apps/macos/web-host/package.json) 增加一行 `workspace:` 依赖，然后重新打包，使新包进入 SEA 快照。见 [macOS 应用](apps/macos/README.md)。仍在使用上一份 DMG 的人，在安装新构建之前不会获得该插件。
 
 <a id="run"></a>
 
@@ -86,7 +86,7 @@ pnpm dsh web
 
 ## 来源
 
-harness 源码是 [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 的 fork，由 DeepSeek AI 开发。本 fork 保留该插件架构，并增加 SwiftUI 产品窗口与 GitHub Release DMG。
+harness 源码是 [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 的 fork，由 DeepSeek AI 开发。本 fork 保留该插件架构，并增加 SwiftUI 产品窗口。
 
 上游社区渠道与贡献政策仍在[上游仓库](https://github.com/deepseek-ai/deepseek-harness)。本个人 fork 并不取代它们。
 
