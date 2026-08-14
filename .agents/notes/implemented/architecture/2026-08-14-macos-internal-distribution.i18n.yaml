@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-14-macos-internal-distribution.md
-2026-08-14-macos-internal-distribution.md: 1970ad62e06613c07efd56c7962f15b9a5d1baea
-2026-08-14-macos-internal-distribution.zh.md: a732376e26b5dc9561b6c384e9044687b9131248
+2026-08-14-macos-internal-distribution.md: 87a17c5ca19814b324b689664fdea847cc655186
+2026-08-14-macos-internal-distribution.zh.md: 7151a99810df8fbb0d5a4c2a64bd993c4a869c6a

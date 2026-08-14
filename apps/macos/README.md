@@ -36,7 +36,7 @@ The `.app` lands under Xcode's DerivedData. [`scripts/copy-web-host.sh`](scripts
 
 ## Internal distribution
 
-`pnpm run package:macos-app` builds Release for `arm64` and writes `apps/macos/dist/release/DeepSeekHarness-<version>-<build>-arm64.zip`. It packages `dsh-web-host` first when that binary is missing, because `xcodebuild` does not run the scheme pre-actions. Before archiving it requires both nested executables, a passing `codesign --verify --deep --strict`, and a `--help` run of the bundled host. Pass `--dry-run` to print the plan, or `--skip-web-host` to require the existing host instead of packaging one.
+`pnpm run package:macos-app` builds Release for `arm64` and writes `apps/macos/dist/release/DeepSeekHarness-<version>-<build>-arm64.zip` plus a matching `.dmg` (UDZO, with an Applications symlink). It packages `dsh-web-host` first when that binary is missing, because `xcodebuild` does not run the scheme pre-actions. Before archiving it requires both nested executables, a passing `codesign --verify --deep --strict`, and a `--help` run of the bundled host. Pass `--dry-run` to print the plan, or `--skip-web-host` to require the existing host instead of packaging one.
 
 A recipient needs macOS 14 or later on Apple Silicon and no Node. The bundle is ad-hoc signed, so Gatekeeper rejects it once a download sets the quarantine attribute:
 
@@ -44,7 +44,7 @@ A recipient needs macOS 14 or later on Apple Silicon and no Node. The bundle is 
 xattr -dr com.apple.quarantine /Applications/DeepSeekHarness.app
 ```
 
-That makes the artifact suitable for a build handed to a colleague, not for public download. Decision record and the public-release requirements: [internal distribution](../../.agents/notes/implemented/architecture/2026-08-14-macos-internal-distribution.md).
+This fork publishes that DMG as a GitHub Release. Clearing quarantine is still required; the build is not notarized. Decision records: [internal distribution](../../.agents/notes/implemented/architecture/2026-08-14-macos-internal-distribution.md), [GitHub Release DMG](../../.agents/notes/implemented/architecture/2026-08-14-macos-dmg-github-release.md).
 
 ## App icon
 

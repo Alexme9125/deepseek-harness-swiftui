@@ -1,0 +1,102 @@
+# Package the ad-hoc signed Apple Silicon app and publish the DMG as a GitHub
+# Release. Recipients still clear Gatekeeper quarantine; this is not a
+# notarized Developer ID build.
+#
+# Tag push macos-v* publishes that tag. workflow_dispatch from any ref creates
+# a prerelease named macos-snapshot-<sha>.
+name: Release (macOS DMG)
+
+on:
+  push:
+    tags:
+      - 'macos-v*'
+  workflow_dispatch:
+
+concurrency:
+  group: macos-dmg-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  PRIMARY_NODE_VERSION: '24'
+  DSH_TELEMETRY_DISABLED: '1'
+
+jobs:
+  package:
+    name: Package and publish DMG
+    # macos-15 is Apple Silicon; the bundled web-host is node24-macos-arm64 only.
+    runs-on: macos-15
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v4
+        with:
+          dest: ${{ runner.temp }}/setup-pnpm
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.PRIMARY_NODE_VERSION }}
+
+      - name: Show Xcode
+        run: xcodebuild -version
+
+      - name: Install (immutable)
+        run: pnpm install --frozen-lockfile
+
+      - name: Package app
+        run: pnpm run package:macos-app
+
+      - name: Locate DMG
+        id: artifact
+        run: |
+          shopt -s nullglob
+          dmg=(apps/macos/dist/release/DeepSeekHarness-*-arm64.dmg)
+          if [ "${#dmg[@]}" -ne 1 ]; then
+            echo "expected exactly one DMG under apps/macos/dist/release, got: ${dmg[*]}"
+            ls -la apps/macos/dist/release || true
+            exit 1
+          fi
+          echo "dmg=${dmg[0]}" >> "$GITHUB_OUTPUT"
+          echo "dmg_name=$(basename "${dmg[0]}")" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DMG: ${{ steps.artifact.outputs.dmg }}
+          RELEASE_NOTES: |
+            Ad-hoc signed Apple Silicon build of the DeepSeek Harness macOS app. Not notarized.
+
+            1. Open the `.dmg` and drag `DeepSeekHarness.app` to Applications.
+            2. Clear Gatekeeper quarantine: `xattr -dr com.apple.quarantine /Applications/DeepSeekHarness.app`
+            3. Open the app, choose a workspace, and add a DeepSeek API key in Settings.
+
+            Requires macOS 14 or later on Apple Silicon. No Node installation is needed.
+
+            The bundled host is a closed plugin set. Extra packages under `~/.dsh/profiles/web` that are not in the snapshot do not load. See the repository README for how to add plugins from source or by rebuilding the app.
+
+            This is a personal fork, not an official DeepSeek AI or Darwin Anime Club product.
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/macos-v* ]]; then
+            tag="${GITHUB_REF_NAME}"
+            extra=()
+          else
+            tag="macos-snapshot-${GITHUB_SHA:0:12}"
+            extra=(--prerelease)
+            git tag "$tag" "$GITHUB_SHA"
+            git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "refs/tags/${tag}"
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "$DMG" --clobber
+          else
+            gh release create "$tag" "$DMG" "${extra[@]}" \
+              --target "$GITHUB_SHA" \
+              --title "DeepSeek Harness macOS ${tag}" \
+              --notes "$RELEASE_NOTES"
+          fi
