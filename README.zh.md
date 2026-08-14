@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-本仓库是 Alex Xiao 对 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的**个人** macOS 打包。它不是 [DeepSeek AI](https://deepseek.com) 的官方产品，也不是 Darwin 动漫社的官方产品。
+本仓库是 Alex9125 对 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的**个人** macOS 打包。它不是 [DeepSeek AI](https://deepseek.com) 的官方产品，也不是 Darwin 动漫社的官方产品。
 
 Alex（Alex Xiao）是 Darwin 动漫社技术部成员。本仓库是 Alex 的个人项目。这里的大量代码是在 [Cursor](https://cursor.com) 中用 Grok 和 Composer 编写的。
 
