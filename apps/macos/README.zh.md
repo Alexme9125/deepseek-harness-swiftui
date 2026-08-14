@@ -32,7 +32,7 @@ pnpm run build:macos-web-host -- --targets=node24-macos-arm64 --skip-build
 xcodebuild -scheme DeepSeekHarness -configuration Debug -destination 'platform=macOS,arch=arm64' build
 ```
 
-`.app` 落在 Xcode 的 DerivedData 中。[`scripts/copy-web-host.sh`](scripts/copy-web-host.sh) 在 `dist/dsh-web-host` 与 `dist/dsh-web-host-spawn-helper` 存在时把它们复制进 `Contents/MacOS`。此 Linux CI checkout 无法运行 `xcodebuild`，也无法产出 macos-arm64 可执行文件。
+`.app` 落在 Xcode 的 DerivedData 中。[`scripts/copy-web-host.sh`](scripts/copy-web-host.sh) 在 `dist/dsh-web-host` 与 `dist/dsh-web-host-spawn-helper` 存在时把它们复制进 `Contents/MacOS`，并为这些嵌套二进制签名。增量 Run 还会重新封存 `.app`，以免 macOS 以 SIGKILL（status 9）杀掉宿主。完整链接把封存留给 Xcode CodeSign；主程序仍未签名时重新封存会使构建失败（`code object is not signed at all`）。此 Linux CI checkout 无法运行 `xcodebuild`，也无法产出 macos-arm64 可执行文件。
 
 ## 运行时解析
 
@@ -76,3 +76,4 @@ File 菜单向已加载的 Web 客户端发送同源命令（`dsh-native-command
 - Intel Mac 不属于本 checkout。捆绑宿主的目标仅是 `node24-macos-arm64`。
 - 捆绑宿主是封闭插件集。`~/.dsh/profiles/web` 中不在 VFS 里的额外包不会加载。
 - Linux CI 不编译此工程，也不产出 macos-arm64 可执行文件。
+- Xcode 控制台会打印 WebKit WebContent 沙盒拒绝，以及 App Intents 的 `linkd.autoShortcut` XPC 失败；这些不是启动失败。

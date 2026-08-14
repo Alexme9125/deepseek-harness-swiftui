@@ -460,7 +460,7 @@ class WebHostBuild {
       const child = spawn(command, args, {
         cwd: root,
         stdio: 'inherit',
-        env: { ...process.env, CI: 'true' },
+        env: { ...process.env, CI: 'true', npm_config_production: 'false' },
       })
       child.once('error', (error) => {
         reject(new Error(`build-web-host: ${label} failed to spawn: ${error.message} (${printable})`))

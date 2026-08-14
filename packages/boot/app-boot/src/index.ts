@@ -12,7 +12,7 @@ import { parseEnv } from 'node:util'
 import { basename, dirname, isAbsolute, resolve } from 'node:path'
 import * as yaml from 'js-yaml'
 import { Context, type FiberState } from '@deepseek-ai/cordis'
-import Loader, { type Entry, type EntryOptions } from '@deepseek-ai/cordis-plugin-loader'
+import Loader, { type Entry, type EntryOptions, type ModuleLoader } from '@deepseek-ai/cordis-plugin-loader'
 import Include, { applyEntryPatches, entryListSchema, type PatchOptions } from '@deepseek-ai/cordis-plugin-include'
 import Group from '@deepseek-ai/cordis-plugin-group'
 import { dshHomePath, resolveDshHome } from '@deepseek-ai/dsh-home-paths'
@@ -473,12 +473,58 @@ function groupedDump(
 }
 
 /**
+ * Parent URL for a plugin specifier when a closed runtime has a host base.
+ * Relative and filesystem-absolute names stay beside the configuration;
+ * bare package names resolve from the installed host.
+ * @param specifier - plugin name passed to `internal.import`.
+ * @param configParentUrl - Loader `baseUrl` (the configuration directory).
+ * @param hostParentUrl - installed-host `bareModuleBaseUrl`.
+ * @returns the parent URL Node should use for this specifier.
+ */
+function pluginImportParent(specifier: string, configParentUrl: string, hostParentUrl: string): string {
+  return specifier.startsWith('.') || isAbsolute(specifier) ? configParentUrl : hostParentUrl
+}
+
+/**
+ * Proxy over Node's cascaded ESM loader so `EntryTree.import` / `loader.create`
+ * use the same host parent as the root Include override for bare names.
+ * Other methods bind back to the real loader: HMR reads `resolveSync` and
+ * `loadCache` from this object.
+ * @param internal - the Loader's Node internal module loader.
+ * @param hostParentUrl - installed-host base for bare package names.
+ * @returns a per-context proxy; the cached singleton is unchanged.
+ */
+function hostResolvedModuleLoader(internal: ModuleLoader, hostParentUrl: string): ModuleLoader {
+  return new Proxy(internal, {
+    get(target, property) {
+      if (property === 'import') {
+        return (
+          specifier: string,
+          parentURL: string,
+          importAttributes: ImportAttributes,
+          ...rest: unknown[]
+        ) => (target.import as (...args: unknown[]) => ReturnType<ModuleLoader['import']>)(
+          specifier,
+          pluginImportParent(specifier, parentURL, hostParentUrl),
+          importAttributes,
+          ...rest,
+        )
+      }
+      const value = Reflect.get(target, property, target) as unknown
+      if (typeof value !== 'function') return value
+      return (value as (...args: never[]) => unknown).bind(target)
+    },
+  })
+}
+
+/**
  * Mount and remember the exact root Include entry used by app boot and user patch-layer HMR.
  * @param ctx - context carrying an initialized Loader service.
  * @param absoluteConfigPath - absolute YAML or JSON configuration path.
  * @param patches - initial app and user patches, applied in order.
  * @param bareModuleBaseUrl - optional installed-host base for bare package
- * names; relative names continue to resolve beside the configuration file.
+ * names in config rows and in later `loader.create` calls; relative names
+ * continue to resolve beside the configuration file.
  * @returns the created root Include entry, or `undefined` when a surface
  * disposed the whole tree (taking the Loader service with it) while the
  * transactional create was still settling entry lifecycle.
@@ -489,6 +535,12 @@ export async function mountRootInclude(
   patches: readonly PatchOptions[] = [],
   bareModuleBaseUrl?: string,
 ): Promise<Entry | undefined> {
+  if (bareModuleBaseUrl !== undefined) {
+    const internal = ctx.loader.internal
+    /* v8 ignore next -- Node supplies the internal loader; this preserves the
+       original diagnostic for hypothetical embedders without it. */
+    if (internal !== undefined) ctx.loader.internal = hostResolvedModuleLoader(internal, bareModuleBaseUrl)
+  }
   ctx.loader.builtins.include = bareModuleBaseUrl === undefined
     ? Include
     : class HostResolvedRootInclude extends Include {
@@ -727,8 +779,9 @@ export async function assertEntriesActivated(ctx: Context, binName: string): Pro
 /**
  * Boot the Loader against `absoluteConfigPath` and return only after the whole
  * tree settles. Relative entry names resolve against the config directory;
- * bare package names resolve there by default or against an explicit
- * `bareModuleBaseUrl` for closed packaged runtimes. The bootstrap include
+ * bare package names in config rows and in `loader.create` resolve there by
+ * default or against an explicit `bareModuleBaseUrl` for closed packaged
+ * runtimes. The bootstrap include
  * is statically imported and mounted as the `cordis:include` builtin, loading
  * through the ambient module pipeline (vite/tsx/plain ESM). The package build
  * embeds Include while leaving Loader external, so the built include tree and
