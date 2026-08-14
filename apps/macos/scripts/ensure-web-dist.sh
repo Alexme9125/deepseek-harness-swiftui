@@ -2,12 +2,7 @@
 # Ensures this checkout can launch `dsh web`. Xcode Run invokes this with SRCROOT=apps/macos.
 set -euo pipefail
 
-if [[ -n "${SRCROOT:-}" ]]; then
-  REPO="$(cd "$SRCROOT/.." && pwd)"
-else
-  REPO="$(cd "$(dirname "$0")/../.." && pwd)"
-fi
-
+REPO="$("$(cd "$(dirname "$0")" && pwd)/resolve-repo.sh")"
 cd "$REPO"
 
 export CI=true

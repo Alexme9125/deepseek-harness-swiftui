@@ -1,11 +1,12 @@
 /**
- * Verify that the executable deploy manifest supplies every required workspace
- * peer in its dependency graph. With auto peer installation disabled, a missing
- * root peer can otherwise fail only when Cordis loads the packaged plugin.
+ * Verify that each executable deploy manifest supplies every required
+ * workspace peer in its dependency graph. With auto peer installation
+ * disabled, a missing root peer can otherwise fail only when Cordis loads
+ * the packaged plugin.
  */
 import { globSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
 interface PackageManifest {
@@ -21,61 +22,102 @@ interface WorkspacePackage {
   manifest: PackageManifest
 }
 
+/** Deploy roots whose dependency graphs must stay closed. */
+const DEFAULT_RUNTIME_MANIFESTS = [
+  'python/sdk-runtime/package.json',
+  'apps/macos/web-host/package.json',
+] as const
+
 const root = resolve(import.meta.dirname, '..')
 const { values } = parseArgs({
   args: process.argv.slice(2),
-  options: { manifest: { type: 'string' } },
+  options: { manifest: { type: 'string', multiple: true } },
 })
-const runtimeManifestPath = resolve(root, values.manifest ?? 'python/sdk-runtime/package.json')
-const runtimeManifest = await loadManifest(runtimeManifestPath)
-const runtimeName = runtimeManifest.name ?? 'python/sdk-runtime'
+const manifestArgs = values.manifest ?? []
+const runtimeManifestPaths = (manifestArgs.length > 0 ? manifestArgs : DEFAULT_RUNTIME_MANIFESTS)
+  .map(path => resolve(root, path))
+
 const workspace = await loadWorkspacePackages()
-const runtimeDependencies = runtimeManifest.dependencies ?? {}
-const parents = new Map<string, string | undefined>()
-const queue: string[] = []
-
-for (const dependency of Object.keys(runtimeDependencies).sort()) {
-  if (!workspace.has(dependency)) continue
-  parents.set(dependency, undefined)
-  queue.push(dependency)
+let failed = false
+for (const runtimeManifestPath of runtimeManifestPaths) {
+  const ok = await verifyManifest(runtimeManifestPath, workspace)
+  if (!ok) failed = true
 }
+if (failed) process.exit(1)
 
-const failures: string[] = []
-for (let index = 0; index < queue.length; index += 1) {
-  const packageName = queue[index]
-  if (packageName === undefined) continue
-  const current = workspace.get(packageName)
-  if (current === undefined) continue
-  const peers = current.manifest.peerDependencies ?? {}
-  const peerMeta = current.manifest.peerDependenciesMeta ?? {}
-  for (const peer of Object.keys(peers).sort()) {
-    if (!workspace.has(peer) || peerMeta[peer]?.optional === true) continue
-    if (runtimeDependencies[peer]?.startsWith('workspace:') === true) continue
-    failures.push(`${formatChain(runtimeName, packageName, parents)} -> ${peer}`)
-  }
-  const dependencies = {
-    ...current.manifest.dependencies,
-    ...current.manifest.optionalDependencies,
-  }
-  for (const dependency of Object.keys(dependencies).sort()) {
-    if (!workspace.has(dependency) || parents.has(dependency)) continue
-    parents.set(dependency, packageName)
+/**
+ * Walk one deploy-root manifest and require every non-optional workspace peer
+ * to appear as a `workspace:` dependency of that root.
+ * @param runtimeManifestPath - absolute path of the deploy-root package.json.
+ * @param workspace - workspace package index.
+ * @returns true when the graph is closed.
+ */
+async function verifyManifest(
+  runtimeManifestPath: string,
+  workspace: ReadonlyMap<string, WorkspacePackage>,
+): Promise<boolean> {
+  const runtimeManifest = await loadManifest(runtimeManifestPath)
+  const runtimeName = runtimeManifest.name ?? relative(root, runtimeManifestPath)
+  const runtimeDependencies = runtimeManifest.dependencies ?? {}
+  const parents = new Map<string, string | undefined>()
+  const queue: string[] = []
+
+  for (const dependency of Object.keys(runtimeDependencies).sort()) {
+    if (!workspace.has(dependency)) continue
+    parents.set(dependency, undefined)
     queue.push(dependency)
   }
+
+  const failures: string[] = []
+  for (let index = 0; index < queue.length; index += 1) {
+    const packageName = queue[index]
+    if (packageName === undefined) continue
+    const current = workspace.get(packageName)
+    if (current === undefined) continue
+    const peers = current.manifest.peerDependencies ?? {}
+    const peerMeta = current.manifest.peerDependenciesMeta ?? {}
+    for (const peer of Object.keys(peers).sort()) {
+      if (!workspace.has(peer) || peerMeta[peer]?.optional === true) continue
+      if (runtimeDependencies[peer]?.startsWith('workspace:') === true) continue
+      failures.push(`${formatChain(runtimeName, packageName, parents)} -> ${peer}`)
+    }
+    const dependencies = {
+      ...current.manifest.dependencies,
+      ...current.manifest.optionalDependencies,
+    }
+    for (const dependency of Object.keys(dependencies).sort()) {
+      if (!workspace.has(dependency) || parents.has(dependency)) continue
+      parents.set(dependency, packageName)
+      queue.push(dependency)
+    }
+  }
+
+  if (failures.length > 0) {
+    console.error(
+      `verify-runtime-closure: required workspace peers are missing from ${relative(root, runtimeManifestPath)} dependencies:`,
+    )
+    for (const failure of failures) console.error(`  ${failure}`)
+    return false
+  }
+
+  console.log(
+    `verify-runtime-closure: ${runtimeName}: ${queue.length} workspace packages form a closed runtime dependency graph.`,
+  )
+  return true
 }
 
-if (failures.length > 0) {
-  console.error('verify-runtime-closure: required workspace peers are missing from python/sdk-runtime dependencies:')
-  for (const failure of failures) console.error(`  ${failure}`)
-  process.exit(1)
-}
-
-console.log(`verify-runtime-closure: ${queue.length} workspace packages form a closed runtime dependency graph.`)
-
+/**
+ * Index every workspace package the closure walker can name, including app
+ * assemblies (`@deepseek-ai/dsh`, `@deepseek-ai/dsh-web-frontend`).
+ * @returns package name → manifest.
+ */
 async function loadWorkspacePackages(): Promise<Map<string, WorkspacePackage>> {
-  const paths = globSync(['packages/*/*/package.json', 'vendor/*/package.json'], { cwd: root })
+  const paths = globSync(
+    ['packages/*/*/package.json', 'vendor/*/package.json', 'apps/*/package.json'],
+    { cwd: root },
+  )
     .sort()
-    .map(relative => resolve(root, relative))
+    .map(relativePath => resolve(root, relativePath))
   const result = new Map<string, WorkspacePackage>()
   for (const path of paths) {
     const manifest = await loadManifest(path)

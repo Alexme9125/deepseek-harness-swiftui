@@ -1,6 +1,0 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
-#   pnpm run verify-translation-pairing --write .agents/notes/proposed/architecture/2026-08-13-swiftui-mac-shell.md
-2026-08-13-swiftui-mac-shell.md: 94e44caaa12076d4a4477fc0fca02d0513ad021a
-2026-08-13-swiftui-mac-shell.zh.md: 2ba1c6f379863d4940b235a99f60083a59f7979c

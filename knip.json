@@ -15,7 +15,8 @@
   ],
   "ignoreWorkspaces": [
     "vendor/*",
-    "python/sdk-runtime"
+    "python/sdk-runtime",
+    "apps/macos/web-host"
   ],
   "ignoreDependencies": [
     "@yarnpkg/cli-dist",
@@ -728,6 +729,7 @@
     },
     "apps/cli": {
       "entry": [
+        "src/packaged-bin.ts",
         "tests/**/*.spec.ts",
         "tests/**/*.e2e.ts",
         "tests/**/*.snapshot.ts"

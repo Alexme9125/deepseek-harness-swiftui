@@ -40,7 +40,7 @@ enum LaunchResolver {
       """
       Could not find a DeepSeek Harness runtime.
       Set DSH_BIN to a `dsh` executable, set DSH_REPO to this checkout, or put `dsh` and Node 24 on your PATH.
-      From this repository run `pnpm install` and `pnpm run build` before launching the app.
+      From this repository run `pnpm install` and `pnpm run build`, then `pnpm run build:macos-web-host` to embed `dsh-web-host`.
       """
     )
   }
@@ -54,6 +54,16 @@ enum LaunchResolver {
       return repo
     }
     return FileManager.default.homeDirectoryForCurrentUser
+  }
+
+  /// Copy the parent environment for the child `dsh` process, dropping dyld
+  /// insert variables. Xcode puts `DYLD_INSERT_LIBRARIES` on a debugged app;
+  /// Node SEA then reads `NODE_SEA_BLOB` from the inserted image and aborts
+  /// with `Assertion failed: (magic) == (kMagic)`.
+  static func environmentForChild(_ environment: [String: String]) -> [String: String] {
+    environment.filter { key, _ in
+      !key.hasPrefix("DYLD_") && !key.hasPrefix("__XPC_DYLD_")
+    }
   }
 
   static func augmentedPath(environment: [String: String] = ProcessInfo.processInfo.environment) -> String {

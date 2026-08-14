@@ -23,6 +23,23 @@
                </EnvironmentBuildable>
             </ActionContent>
          </ExecutionAction>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Ensure bundled web-host"
+               scriptText = "&quot;${SRCROOT}/scripts/ensure-web-host.sh&quot;&#10;"
+               shellToInvoke = "/bin/zsh">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "24A000000000000000000006"
+                     BuildableName = "DeepSeekHarness.app"
+                     BlueprintName = "DeepSeekHarness"
+                     ReferencedContainer = "container:DeepSeekHarness.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
       </PreActions>
       <BuildActionEntries>
          <BuildActionEntry
@@ -54,7 +71,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(SRCROOT)/.."
+      customWorkingDirectory = "$(SRCROOT)/../.."
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"

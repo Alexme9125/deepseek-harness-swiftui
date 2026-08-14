@@ -761,3 +761,31 @@ describe.skipIf(!existsSync(dshBin))('dsh BUILT bin (node lib/bin.js, no tsx)', 
     }, 30_000)
   })
 })
+
+const packagedBin = join(repoRoot, 'apps/cli/lib/packaged-bin.js')
+
+describe.skipIf(!existsSync(packagedBin))('dsh packaged-bin (node lib/packaged-bin.js)', () => {
+  it('accepts the web alias and prints web help without booting', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'dsh-packaged-bin-help-'))
+    try {
+      const result = await execa(process.execPath, [packagedBin, 'web', '--help'], {
+        input: '',
+        timeout: 25_000,
+        killSignal: 'SIGKILL',
+        reject: false,
+        env: {
+          ...process.env,
+          DSH_HOME: home,
+          DSH_TELEMETRY_DISABLED: '1',
+        },
+      })
+      expect(result.exitCode).toBe(0)
+      expect(result.stderr).toBe('')
+      expect(result.stdout).toContain('Usage: dsh --profile web')
+      expect(result.stdout).toContain('--port <port>')
+      expect(result.stdout).not.toContain('dsh web: http://')
+    } finally {
+      rmSync(home, { recursive: true, force: true })
+    }
+  }, 30_000)
+})
