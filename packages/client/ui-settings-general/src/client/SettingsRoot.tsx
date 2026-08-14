@@ -119,13 +119,13 @@ export function SettingsRoot(props: SettingsRootComponentProps) {
   // Modal open state stays component-local; there is no public window API.
   useEffect(() => {
     const onCommand = (event: Event) => {
-      const detail = event instanceof CustomEvent ? event.detail : undefined
+      const detail = event instanceof CustomEvent ? (event as CustomEvent<unknown>).detail : undefined
       if (typeof detail === 'object' && detail !== null && 'name' in detail && detail.name === 'open-settings') {
         setOpen(true)
       }
     }
     window.addEventListener('dsh-native-command', onCommand)
-    return () => window.removeEventListener('dsh-native-command', onCommand)
+    return () => { window.removeEventListener('dsh-native-command', onCommand) }
   }, [])
 
   // The ledger tick keeps the nav rows fresh: registrants re-register with
