@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-14-macos-dmg-github-release.md
-2026-08-14-macos-dmg-github-release.md: a88ec32f3a636e4d6f1c4c295f5536cc94f75c23
-2026-08-14-macos-dmg-github-release.zh.md: 38e1e54faa773f843710fd4f106af95691f30458
+2026-08-14-macos-dmg-github-release.md: c948a0cb8376c8487a60d2c858bd7ada2fb45750
+2026-08-14-macos-dmg-github-release.zh.md: f9b7c86d85ca6655bbdd8c67b2c87ee9be424ba9
