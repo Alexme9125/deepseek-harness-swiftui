@@ -1,3 +1,5 @@
 # AGENTS.md — GitHub Actions
 
+This personal fork executes workflows only on `workflow_dispatch` (and `workflow_call` for the Python wheel builder). Automatic `push`, `pull_request`, `schedule`, and `issues` triggers are absent; [the fork Actions note](../.agents/notes/implemented/process/2026-08-19-fork-manual-github-actions.md) owns that split. Job graphs in the YAML files remain the upstream definitions for local tests.
+
 Run jobs on Windows runners (`windows-*` labels) under native `pwsh`. The pull-request `windows` job is the deliberate exception: it runs Windows Node under Wine on hosted Linux and blocks `all checks passed`; `windows-native` runs automatically on `windows-2025` (or the self-hosted `[self-hosted, dsh-win-ci, windows]` pool under `DSH_CI_FAILOVER_WINDOWS=selfhosted`) but reports independently. The master `serial-windows` standby continuously validates the self-hosted failover target — see the [failover runbook](../.agents/notes/implemented/process/2026-07-26-ci-failover-runbook.md).

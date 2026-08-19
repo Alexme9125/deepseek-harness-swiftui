@@ -1,30 +1,9 @@
 name: Issue lifecycle
 
 on:
-  issues:
-    types:
-      - opened
-      - edited
-      - assigned
-      - unassigned
-      - labeled
-      - unlabeled
-      - closed
-      - reopened
-      - field_added
-      - field_removed
-  pull_request:
-    types:
-      - opened
-      - edited
-      - synchronize
-      - reopened
-      - labeled
-      - unlabeled
-      - review_requested
-  pull_request_review:
-    types:
-      - submitted
+  # This personal fork starts jobs only on demand. See
+  # .agents/notes/implemented/process/2026-08-19-fork-manual-github-actions.md
+  workflow_dispatch:
 
 permissions:
   contents: read

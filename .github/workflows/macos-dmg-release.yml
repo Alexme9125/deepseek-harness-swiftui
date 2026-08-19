@@ -2,14 +2,13 @@
 # Release. Recipients still clear Gatekeeper quarantine; this is not a
 # notarized Developer ID build.
 #
-# Tag push macos-v* publishes that tag. workflow_dispatch from any ref creates
-# a prerelease named macos-snapshot-<sha>.
+# workflow_dispatch from a macos-v* ref publishes that tag. Dispatch from any
+# other ref creates a prerelease named macos-snapshot-<sha>. A tag push does
+# not start this job.
+# See .agents/notes/implemented/process/2026-08-19-fork-manual-github-actions.md
 name: Release (macOS DMG)
 
 on:
-  push:
-    tags:
-      - 'macos-v*'
   workflow_dispatch:
 
 concurrency:

@@ -1,17 +1,8 @@
 name: Deploy documentation
 
 on:
-  push:
-    branches: [master]
-    paths:
-      - '.github/workflows/docs-pages.yml'
-      - 'docs/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - 'scripts/project-doc-site.ts'
-      - 'scripts/project-doc-site.spec.ts'
-      - 'website/**'
+  # This personal fork starts jobs only on demand. See
+  # .agents/notes/implemented/process/2026-08-19-fork-manual-github-actions.md
   workflow_dispatch:
 
 concurrency:

@@ -1,7 +1,9 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as yaml from 'js-yaml'
 import { describe, expect, it } from 'vitest'
+
+const FORK_ACTIONS_EVENTS = new Set(['workflow_dispatch', 'workflow_call'])
 
 const root = resolve(import.meta.dirname, '..')
 const runnerPrivatePnpmDestination = '${{ runner.temp }}/setup-pnpm'
@@ -239,7 +241,6 @@ describe('Python release workflows', () => {
   it('keeps complete wheel validation separate from protected public publication', () => {
     const workflow = loadWorkflow('.github/workflows/python-release.yml')
     const dispatch = workflowEvent(workflow, 'workflow_dispatch')
-    const pullRequest = workflowEvent(workflow, 'pull_request')
     const build = workflowJob(workflow, 'build')
     const pythonCompat = workflowJob(workflow, 'python-compat')
     const validate = workflowJob(workflow, 'validate')
@@ -255,7 +256,6 @@ describe('Python release workflows', () => {
     }
 
     expect(dispatch.inputs.publish).toMatchObject({ type: 'boolean', default: false })
-    expect(pullRequest).toEqual({ types: ['labeled'] })
     expect(build).toMatchObject({
       if: "github.event_name == 'workflow_dispatch' || github.event.label.name == 'python-release-dry-run'",
       uses: './.github/workflows/build-exe-for-python-sdk.yml',
@@ -371,22 +371,28 @@ describe('Python release workflows', () => {
   })
 })
 
-describe('Issue lifecycle workflow', () => {
-  it('uses explicit review handoff events without rerunning when a draft becomes ready', () => {
-    const lifecycle = loadWorkflow('.github/workflows/issue-lifecycle.yml')
-    const lifecyclePullRequest = workflowEvent(lifecycle, 'pull_request')
-    const lifecycleReview = workflowEvent(lifecycle, 'pull_request_review')
-    const lifecycleJob = workflowJob(lifecycle, 'lifecycle')
-    const policy = loadWorkflow('.github/workflows/issue-policy.yml')
-    const policyPullRequest = workflowEvent(policy, 'pull_request')
+describe('This fork GitHub Actions', () => {
+  it('keeps inherited job graphs but does not subscribe automatic GitHub events', () => {
+    const dir = resolve(root, '.github/workflows')
+    const files = readdirSync(dir).filter(name => name.endsWith('.yml')).sort()
+    expect(files.length).toBeGreaterThan(0)
 
-    expect(lifecyclePullRequest.types).not.toContain('ready_for_review')
-    expect(lifecyclePullRequest.types).toContain('review_requested')
-    expect(lifecycleReview.types).toEqual(['submitted'])
+    for (const file of files) {
+      const workflow = loadWorkflow(`.github/workflows/${file}`)
+      const events = workflowEventNames(workflow)
+      expect(events.length, file).toBeGreaterThan(0)
+      expect(events.every(event => FORK_ACTIONS_EVENTS.has(event)), file).toBe(true)
+    }
+  })
+})
+
+describe('Issue lifecycle workflow', () => {
+  it('keeps the changes-requested job filter without GitHub pull-request events', () => {
+    const lifecycle = loadWorkflow('.github/workflows/issue-lifecycle.yml')
+    const lifecycleJob = workflowJob(lifecycle, 'lifecycle')
     expect(lifecycleJob.if).toBe(
       "${{ github.event_name != 'pull_request_review' || (github.event.action == 'submitted' && github.event.review.state == 'changes_requested') }}",
     )
-    expect(policyPullRequest.types).toContain('ready_for_review')
   })
 })
 
@@ -412,6 +418,12 @@ function loadWorkflow(path: string): Record<string, unknown> {
   const workflow: unknown = yaml.load(readFileSync(resolve(root, path), 'utf8'))
   if (!isRecord(workflow)) throw new TypeError(`${path} must define a workflow`)
   return workflow
+}
+
+function workflowEventNames(workflow: Record<string, unknown>): string[] {
+  if (workflow.on === 'workflow_dispatch') return ['workflow_dispatch']
+  if (!isRecord(workflow.on)) throw new TypeError('workflow must define on')
+  return Object.keys(workflow.on)
 }
 
 function workflowEvent(workflow: Record<string, unknown>, event: string): Record<string, unknown> {

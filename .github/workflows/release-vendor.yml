@@ -2,15 +2,13 @@
 # packages under vendor/, each on its own version line. This sequence releases
 # independently of dsh and of the native packages.
 #
-# Pack runs without credentials on every pull request and master push.
-# Publication is a manual dispatch from a vendor-* tag; a vendor release can
-# carry several versions, so each package has its own tag.
+# This personal fork starts pack and publish only on demand. Publication is a
+# manual dispatch from a vendor-* tag; a vendor release can carry several
+# versions, so each package has its own tag.
+# See .agents/notes/implemented/process/2026-08-19-fork-manual-github-actions.md
 name: Release (vendor)
 
 on:
-  pull_request:
-  push:
-    branches: [master]
   workflow_dispatch:
     inputs:
       publish:
