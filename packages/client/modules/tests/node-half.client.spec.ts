@@ -853,7 +853,7 @@ describe('module graph order', () => {
       expect(service.graph().entries.map(entry => entry.id)).toContain(hostName)
       return
     }
-    expect(String(thrown)).toMatch(/client bundle not found/)
+    expect(String(thrown)).toMatch(/client bundles? not found/)
   })
 
   it('leaves loader builtins out of the boot graph', () => {

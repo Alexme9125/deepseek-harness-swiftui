@@ -166,7 +166,7 @@ describe('preset discovery', () => {
     // @yao-pkg/pkg --sea readdir returns strings with or without withFileTypes.
     fsHarness.readdirEntries = ['usable', 'stray.yml']
 
-    const found = await scanRoot({ path: root, trust: 'user' })
+    const found = await scanRoot({ path: root, trust: 'user' }, HARNESS)
 
     expect(found.map(preset => preset.id)).toEqual(['usable'])
   })
@@ -175,7 +175,7 @@ describe('preset discovery', () => {
     const root = await mkdtemp(join(tmpdir(), 'dsh-presets-file-id-'))
     await writeFile(join(root, 'usable'), 'not a directory\n')
 
-    const found = await scanRoot({ path: root, trust: 'user' })
+    const found = await scanRoot({ path: root, trust: 'user' }, HARNESS)
 
     expect(found).toEqual([])
   })
@@ -184,7 +184,7 @@ describe('preset discovery', () => {
     const root = await mkdtemp(join(tmpdir(), 'dsh-presets-ghost-name-'))
     fsHarness.readdirEntries = ['ghost']
 
-    const found = await scanRoot({ path: root, trust: 'user' })
+    const found = await scanRoot({ path: root, trust: 'user' }, HARNESS)
 
     expect(found).toEqual([])
   })

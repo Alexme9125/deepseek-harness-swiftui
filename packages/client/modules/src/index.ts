@@ -830,7 +830,7 @@ export class ClientModuleRegistry extends Service {
       }
       try {
         return {
-          path: createRequire(baseUrl).resolve(`${expectedPackageName}/package.json`),
+          path: packageJsonResolver(baseUrl)(expectedPackageName),
           packageName: expectedPackageName,
         }
       } catch {
@@ -845,8 +845,19 @@ export class ClientModuleRegistry extends Service {
         ? internal.resolveSync(baseUrl, { specifier: loaderName, attributes: {} }).url
         : internal.resolveSync(loaderName, baseUrl, {}).url
     } catch {
-      // The Loader cannot resolve the name: its row cannot have imported, so
-      // the name is permanently not a client row.
+      // Loader resolution failed from the profile directory. A closed SEA
+      // still has the package in the host tree; try that before classifying
+      // the row as non-client.
+      if (expectedPackageName !== undefined) {
+        try {
+          return {
+            path: packageJsonResolver(baseUrl)(expectedPackageName),
+            packageName: expectedPackageName,
+          }
+        } catch {
+          return undefined
+        }
+      }
       return undefined
     }
     return this.nearestPackage(moduleUrl, expectedPackageName)
