@@ -10,6 +10,18 @@ const runnerPrivatePnpmDestination = /^\$\{\{ runner\.temp \}\}\/setup-pnpm-\$\{
 const nativeWindowsPnpmDestination = '${{ runner.temp }}/setup-pnpm-js-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}'
 
 describe('CI workflow', () => {
+  it('subscribes only on-demand GitHub Actions events', () => {
+    const files = readdirSync(resolve(root, '.github/workflows'))
+      .filter(name => name.endsWith('.yml') || name.endsWith('.yaml'))
+      .map(name => `.github/workflows/${name}`)
+    expect(files.length).toBeGreaterThan(0)
+    for (const file of files) {
+      const workflow = loadWorkflow(file)
+      const events = workflowEventNames(workflow)
+      expect(events.every(event => FORK_ACTIONS_EVENTS.has(event)), file).toBe(true)
+    }
+  })
+
   it('isolates every pnpm action setup destination per runner', () => {
     const files = ['.github/workflows/ci.yml', '.github/workflows/ci-master.yml']
     const setups: Array<{ jobName: string; step: unknown }> = []
@@ -298,15 +310,14 @@ describe('CI workflow', () => {
       'cancel-in-progress': true,
     })
 
-    // The exact event sets are what keep master-only jobs out of the PR check
-    // panel: ci-master triggers only on push(master) + workflow_dispatch and
-    // never on pull_request; ci.yml is exactly pull_request-only. Assert the
-    // full sets so losing the wrong event, or gaining an extra one, fails.
+    // This fork does not subscribe push or pull_request. Job `if:` strings stay
+    // the upstream event filters so local YAML tests still pin the official
+    // graph; GitHub never delivers those events here.
     if (!isRecord(workflow.on) || !isRecord(prWorkflow.on)) {
       throw new TypeError('both CI workflows must define on')
     }
-    expect(Object.keys(workflow.on).sort()).toEqual(['push', 'workflow_dispatch'])
-    expect(Object.keys(prWorkflow.on)).toEqual(['pull_request'])
+    expect(Object.keys(workflow.on)).toEqual(['workflow_dispatch'])
+    expect(Object.keys(prWorkflow.on)).toEqual(['workflow_dispatch'])
 
     // Neither drill may carry a job-level group: it would not exempt the job
     // from run-scoped cancellation.
@@ -673,38 +684,21 @@ describe('Python release workflows', () => {
 })
 
 describe('Issue lifecycle workflow', () => {
-  it('runs the lifecycle job on every PR/review event but gates token and board steps', () => {
+  it('keeps write-step gates without subscribing GitHub pull-request events', () => {
     const lifecycle = loadWorkflow('.github/workflows/issue-lifecycle.yml')
     const policy = loadWorkflow('.github/workflows/issue-policy.yml')
     const lifecycleJob = workflowJob(lifecycle, 'lifecycle')
     if (!Array.isArray(lifecycleJob.steps)) throw new TypeError('Issue lifecycle job must define steps')
 
-    // The job has no job-level `if`, so it is listed on every pull_request /
-    // pull_request_review event and reports success instead of a gray skip. The
-    // write-capable steps are gated at step level so approved/commented reviews
-    // never mint a Project/Issue App token nor touch the board.
-    expect(lifecycle.on).toHaveProperty('pull_request')
-    expect(lifecycle.on).toHaveProperty('pull_request_review')
+    expect(Object.keys(lifecycle.on as Record<string, unknown>)).toEqual(['workflow_dispatch'])
+    expect(Object.keys(policy.on as Record<string, unknown>)).toEqual(['workflow_dispatch'])
     expect(lifecycleJob.if).toBeUndefined()
-    // Keep the subscription-type gates: issue-lifecycle does not re-subscribe
-    // ready_for_review (issue-policy owns that) and only reacts to submitted
-    // review events.
-    const lifecyclePullRequest = workflowEvent(lifecycle, 'pull_request')
-    const lifecycleReview = workflowEvent(lifecycle, 'pull_request_review')
-    expect(lifecyclePullRequest.types).toContain('opened')
-    expect(lifecyclePullRequest.types).not.toContain('ready_for_review')
-    expect(lifecyclePullRequest.types).toContain('review_requested')
-    expect(lifecycleReview.types).toEqual(['submitted'])
     const gated = "${{ github.event_name != 'pull_request_review' || github.event.review.state == 'changes_requested' }}"
     const steps = lifecycleJob.steps.filter(isRecord)
     const tokenStep = steps.find(s => s.name === 'Create project token')
     const handleStep = steps.find(s => s.name === 'Handle repository event')
     expect(tokenStep).toMatchObject({ if: gated })
     expect(handleStep).toMatchObject({ if: gated })
-
-    // issue-policy owns PR validation; it is read-only and a real gate.
-    const policyPullRequest = workflowEvent(policy, 'pull_request')
-    expect(policyPullRequest.types).toContain('ready_for_review')
   })
 
   it('uses a read-only Project token only for human pull request policy metadata', () => {
@@ -771,7 +765,7 @@ describe('npm release workflows', () => {
     const commands = dependencies.steps.flatMap(step =>
       isRecord(step) && typeof step.run === 'string' ? [step.run] : [])
 
-    expect(Object.keys(workflow.on).sort()).toEqual(['pull_request', 'push', 'workflow_dispatch'])
+    expect(Object.keys(workflow.on)).toEqual(['workflow_dispatch'])
     expect(commands).toContain('pnpm run verify-package-dependencies')
     expect(commands).toContain('pnpm run verify-npm-install-layout')
   })

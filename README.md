@@ -4,7 +4,11 @@ English | [中文](README.zh.md)
 
 This repository is Alex9125's **personal** macOS packaging of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). It is not an official [DeepSeek AI](https://deepseek.com) product, and it is not an official Darwin Anime Club product.
 
+Alex (Alex Xiao) is a member of the Darwin Anime Club (Darwin 动漫社) technical department. This repository is Alex's personal project. A large part of the code here was written in [Cursor](https://cursor.com) with Grok and Composer.
+
 It is built on an **everything-is-a-plugin** architecture and powered by [Cordis](https://github.com/cordiverse/cordis), whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512).
+
+This fork adds a SwiftUI macOS app that launches the existing `web` profile on `127.0.0.1` and shows that Web UI in WKWebView. The `.app` bundles `dsh-web-host`, so you do not need a system Node install. The harness source tracks official `dsh-v0.1.3-alpha.1`.
 
 Documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
@@ -79,6 +83,10 @@ pnpm dsh web
 ```
 
 `pnpm run build` prepares the repository artifacts. `pnpm dsh web` uses those built artifacts without rebuilding.
+
+### Run the macOS app from Xcode
+
+On macOS 14+ / Apple Silicon, open [`apps/macos/DeepSeekHarness.xcodeproj`](apps/macos/README.md) and Run. The window launches the `web` profile on loopback and shows the same Web UI.
 
 ## Community and support
 

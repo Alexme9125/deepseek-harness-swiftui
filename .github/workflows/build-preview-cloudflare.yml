@@ -6,8 +6,9 @@ name: Build PR preview
 # platform access to this repository's sources.
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  # This personal fork starts jobs only on demand. See
+  # .agents/notes/implemented/process/2026-08-19-fork-manual-github-actions.md
+  workflow_dispatch:
 
 # Within one pull request the newest build wins. Across pull requests there is
 # nothing to serialize: each uploads to its own branch alias, so two deployments

@@ -4,7 +4,11 @@
 
 本仓库是 Alex9125 对 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的**个人** macOS 打包。它不是 [DeepSeek AI](https://deepseek.com) 的官方产品，也不是 Darwin 动漫社的官方产品。
 
+Alex（Alex Xiao）是 Darwin 动漫社技术部成员。本仓库是 Alex 的个人项目。这里的大量代码是在 [Cursor](https://cursor.com) 中用 Grok 和 Composer 编写的。
+
 它构建于**一切皆插件**的架构之上，由 [Cordis](https://github.com/cordiverse/cordis) 驱动，其设计参见论文 [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512)。
+
+本 fork 增加了一个 SwiftUI macOS 应用：把现有 `web` profile 启动在 `127.0.0.1` 上，并在 WKWebView 中显示同一套 Web UI。`.app` 内捆绑 `dsh-web-host`，因此你不需要系统安装 Node。harness 源码跟踪官方 `dsh-v0.1.3-alpha.1`。
 
 文档：[https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
@@ -13,8 +17,6 @@
 DeepSeek Harness 处于 _开发者预览_ 阶段，正在快速迭代。**未来将出现破坏兼容性的变更。**
 
 运行本项目前，请阅读[安全说明](SAFETY.zh.md)。
-
-<a id="run"></a>
 
 ## 安装
 
@@ -68,8 +70,6 @@ npx @deepseek-ai/dsh web
 
 <a id="run-from-source"></a>
 
-<a id="run-from-source"></a>
-
 ### 从源码运行
 
 如需从本仓库源码运行：
@@ -83,6 +83,10 @@ pnpm dsh web
 ```
 
 `pnpm run build` 会准备仓库产物。`pnpm dsh web` 会直接使用这些已构建产物，不会重新构建。
+
+### 从 Xcode 运行 macOS 应用
+
+在 macOS 14+ / Apple Silicon 上，打开 [`apps/macos/DeepSeekHarness.xcodeproj`](apps/macos/README.md) 并 Run。窗口会在 loopback 上启动 `web` profile，并显示同一套 Web UI。
 
 ## 社区与支持
 
@@ -107,9 +111,11 @@ pnpm dsh web
   </tbody>
 </table>
 
+## 来源
+
 harness 源码是 [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 的 fork，由 DeepSeek AI 开发。本 fork 保留该插件架构，并增加 SwiftUI 产品窗口。
 
-参见 [CONTRIBUTING.md](CONTRIBUTING.zh.md)。
+上游社区渠道与贡献政策仍在[上游仓库](https://github.com/deepseek-ai/deepseek-harness)。本个人 fork 不替代它们。
 
 ## 开发
 
