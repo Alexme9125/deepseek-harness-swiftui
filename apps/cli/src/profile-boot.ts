@@ -153,14 +153,19 @@ function allPatches(composed: ComposedProfile): PatchOptions[] {
  * then the telemetry switch.
  * @param name - the profile name.
  * @param patchFiles - `--patch` overlay paths, in argv order.
+ * @param healModuleFallback - when false, skip `$DSH_HOME/profiles/node_modules`
+ *   healing. The packaged web-host cannot symlink into a snapshot VFS.
  * @returns the profile and its patch layers.
  */
 async function composeProfile(
   name: string,
   patchFiles: readonly string[],
+  healModuleFallback = true,
 ): Promise<ComposedProfile> {
   const profile = prepareProfile(name)
-  await healProfilesModuleFallback({ installAnchor: INSTALL_ANCHOR, profile })
+  if (healModuleFallback) {
+    await healProfilesModuleFallback({ installAnchor: INSTALL_ANCHOR, profile })
+  }
   const homePatches = loadOptionalPatches(NAME, homePatchPath()) ?? []
   const overlays = patchFiles.flatMap(file => loadOverlayPatches(NAME, resolve(file)))
   const bundlePatches = profile.layers.flatMap(layer => layer.patches)
@@ -228,7 +233,11 @@ export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Con
     (message) => { process.stderr.write(`${NAME}: ${message}\n`) },
   )
 
-  const composed = await composeProfile(options.profile, options.patchFiles)
+  const composed = await composeProfile(
+    options.profile,
+    options.patchFiles,
+    options.bareModuleBaseUrl === undefined,
+  )
   const app: { current?: Context } = {}
   const appReady = createAppReady()
   const shutdown = createProcessShutdown(async () => {

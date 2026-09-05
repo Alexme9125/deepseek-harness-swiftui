@@ -192,6 +192,22 @@ describe('ui-workspace apply', () => {
       .rejects.toThrow('index unavailable')
   })
 
+  it('installs the native-command bus and removes it on teardown', async () => {
+    const host = globalThis as typeof globalThis & {
+      __dshNativeInvoke?: (detail: unknown) => Promise<unknown>
+    }
+    const b = await bench()
+    const fiber = b.ctx.plugin({ inject: [...inject], apply })
+    await fiber.await()
+    const invoke = host.__dshNativeInvoke
+    if (invoke === undefined) throw new Error('expected __dshNativeInvoke after apply')
+    const startSession = vi.spyOn(b.ctx.uiWorkspace, 'startSession').mockImplementation(() => undefined)
+    await expect(invoke({ name: 'new-session' })).resolves.toEqual({ ok: true })
+    expect(startSession).toHaveBeenCalledWith()
+    await fiber.dispose()
+    expect(host.__dshNativeInvoke).toBeUndefined()
+  })
+
   it('unregisters every entry on teardown', async () => {
     const b = await bench()
     declare(b.slots, 'sidebar.workspaces', 'conversation.hero.workspace', 'conversation.empty.workspace')
