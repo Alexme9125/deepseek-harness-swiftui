@@ -35,12 +35,12 @@ Xcode scheme 在缺少 `apps/macos/dist/dsh-web-host` 时于首次 Run 打包它
 
 ## Native command contract
 
-页面全局暴露 `__dshNativeInvoke(detail)`，并监听 `CustomEvent('dsh-native-command', { detail })`。document-start 用户脚本把 invoke 调用排进 `__dshNativeQueue`，直到 [`dsh-client-runtime`](../../../../packages/client/runtime/src/client/native-command.ts) 的 apply 替换该桩。已知的 `detail.name` 值：
+页面全局暴露 `__dshNativeInvoke(detail)`，并监听 `CustomEvent('dsh-native-command', { detail })`。document-start 用户脚本把 invoke 调用排进 `__dshNativeQueue`，直到 [`ui-workspace`](../../../../packages/client/ui-workspace/src/client/native-command.ts) 的 apply 替换该桩。已知的 `detail.name` 值：
 
 | name | 载荷 | 客户端效果 |
 |---|---|---|
-| `new-session` | 无 | `workspaces.startSession()` |
-| `add-workspace` | `path`（非空字符串） | `workspaces.create({ path })`，然后 `startSession(workspaceId)` |
+| `new-session` | 无 | `uiWorkspace.startSession()` |
+| `add-workspace` | `path`（非空字符串） | `workspaces.create({ path })`，然后 `uiWorkspace.startSession(workspaceId)` |
 | `open-settings` | 无 | SettingsRoot 设置其本地模态打开状态 |
 
 Swift 的 File 菜单 **New Session**（⌘N）、**Add Workspace…**（⌘O，仅目录的 `NSOpenPanel`）、**Settings…**（⌘,）、Dock / 窗口 / `file://` 文件夹拖放，以及 Open With，都会把这些命令入队。产品窗口会从 `UserDefaults` 恢复至少 960×640 的窗口矩形。凭据仍在 `$DSH_HOME/.credentials.yaml`。

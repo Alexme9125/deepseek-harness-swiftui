@@ -6,7 +6,7 @@ English | [中文](2026-08-14-client-modules-host-package-resolve.zh.md)
 
 ## Problem
 
-After packaged `dsh-web-host` booted, the WKWebView showed **Failed to load plugins** / `@deepseek-ai/dsh-client-app-shell` pending for `slots`, `sessions`, and `layout`. Those services come from `dsh-client-runtime` and `dsh-client-ui-layout`, which are ordinary web-bundle roster rows. The host process was up; the browser graph did not contain them.
+After packaged `dsh-web-host` booted, the WKWebView showed **Failed to load plugins** / `@deepseek-ai/dsh-client-app-shell` pending for `slots`, `sessions`, and `layout`. Those services come from `dsh-client-ui-session` and `dsh-client-ui-layout`, which are ordinary web-bundle roster rows. The host process was up; the browser graph did not contain them.
 
 The client-modules node half resolves each Loader entry's `package.json` with `createRequire(ctx.baseUrl)` — the profile directory. A closed packaged host skips `healProfilesModuleFallback` ([loader.create host parent](2026-08-14-loader-create-honors-bare-module-base.md)), and pkg will not walk `$DSH_HOME/profiles/node_modules` from that parent. `resolveMeta` treats `MODULE_NOT_FOUND` as "not a client package" (the same path as `cordis:include`), so every `dsh.client` row vanished from `window.__DSH_BOOT__`. The shell still mounts app-shell, which waits forever for services that no graph row will provide.
 

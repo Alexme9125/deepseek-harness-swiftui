@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-13-swiftui-mac-shell.md
-2026-08-13-swiftui-mac-shell.md: f65f1965df9de6bd1d4a413e7e2fa1b0341e3bd5
-2026-08-13-swiftui-mac-shell.zh.md: 49a8759a2b1854a725267cdee0e212760ac31c8a
+2026-08-13-swiftui-mac-shell.md: fe00e61f4d2a2604311732aa3a3f45162f476d51
+2026-08-13-swiftui-mac-shell.zh.md: 4884e28401a3b08d6e066a1e05162af99d45dfc7
