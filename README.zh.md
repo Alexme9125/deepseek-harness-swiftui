@@ -41,7 +41,7 @@ xattr -dr com.apple.quarantine /Applications/DeepSeekHarness.app
 
 ### 从源码运行，然后 `dsh plugin add`
 
-克隆本仓库，完成[从源码运行](#run-from-source)，并遵循[打包并安装插件](docs/user/develop/basic/publish.md)。在本仓库目录中：
+克隆本仓库，完成[从源码运行](#run-from-source)，并遵循[打包并安装插件](docs/user/develop/basic/publish.zh.md)。在本仓库目录中：
 
 ```sh
 pnpm dsh plugin --profile web add <package>
@@ -52,7 +52,7 @@ pnpm dsh web
 
 ### 带着额外插件重建 `.app`
 
-在 [`apps/macos/web-host/package.json`](apps/macos/web-host/package.json) 增加一行 `workspace:` 依赖，然后重新打包，使新包进入 SEA 快照。见 [macOS 应用](apps/macos/README.md)。仍在使用上一份 DMG 的人，在安装新构建之前不会获得该插件。
+在 [`apps/macos/web-host/package.json`](apps/macos/web-host/package.json) 增加一行 `workspace:` 依赖，然后重新打包，使新包进入 SEA 快照。见 [macOS 应用](apps/macos/README.zh.md)。仍在使用上一份 DMG 的人，在安装新构建之前不会获得该插件。
 
 <a id="run"></a>
 
@@ -86,7 +86,7 @@ pnpm dsh web
 
 ### 从 Xcode 运行 macOS 应用
 
-在 macOS 14+ / Apple Silicon 上，打开 [`apps/macos/DeepSeekHarness.xcodeproj`](apps/macos/README.md) 并 Run。窗口会在 loopback 上启动 `web` profile，并显示同一套 Web UI。
+在 macOS 14+ / Apple Silicon 上，打开 [`apps/macos/DeepSeekHarness.xcodeproj`](apps/macos/README.zh.md) 并 Run。窗口会在 loopback 上启动 `web` profile，并显示同一套 Web UI。
 
 ## 社区与支持
 

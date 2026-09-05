@@ -12,11 +12,11 @@ Status: implemented
 
 ## Decision
 
-[`apps/macos`](../../../../apps/macos/README.md) 是一份 SwiftUI 应用组装。该窗口把现有 `web` profile 作为绑定到 `127.0.0.1` 的子进程启动，并在 WKWebView 中加载该源。
+[`apps/macos`](../../../../apps/macos/README.zh.md) 是一份 SwiftUI 应用组装。该窗口把现有 `web` profile 作为绑定到 `127.0.0.1` 的子进程启动，并在 WKWebView 中加载该源。
 
 该壳不重实现 Client 包，也不新增 IPC `doFetch` 载体。它使用 [GUI 分层说明](2026-07-19-gui-layering-and-rpc-protocol.md) 已经交付的 HTTP 承载。原生 File 菜单操作、`NSOpenPanel` 以及 Dock 或窗口的文件夹拖放，向该页派发同源的 `dsh-native-command` 事件，使 `ctx.workspaces` 与 SettingsRoot 走现有 Web 流程。
 
-`.app` 可以嵌入 `dsh-web-host`，即 web profile 的封闭 `@yao-pkg/pkg --sea` 可执行文件。该产物不是 [`dsh-jsonrpc-agent-pkg`](2026-07-10-single-file-executable-sdk-runtime-distribution.md)：JSON-RPC exe 通过 stdio 启动外部 `cordis.yml`，没有 Host webserver，也没有前端 dist。web-host 的部署根是 [`apps/macos/web-host/package.json`](../../../../apps/macos/web-host/package.json)。其打包入口是 [`apps/cli/src/packaged-bin.ts`](../../../../apps/cli/src/packaged-bin.ts)，它以 `bareModuleBaseUrl` 调用 `runProfile`，使裸插件从 VFS 解析，包括之后对裸包名的 `loader.create`（例如 directory-picker 后端）（[宿主父 URL](../bug-fix/2026-08-14-loader-create-honors-bare-module-base.md)）。client-modules 的 Node 半边在 profile 目录解析不到时，从同一封闭树解析每个 `dsh.client` 的 `package.json`（[宿主包查找](../bug-fix/2026-08-14-client-modules-host-package-resolve.md)）。快照把 sharp 的 libvips 共享库列为 pkg `assets`（`*.dylib`、`*.so`）。`dlopen` 加载 sharp 的 `.node` addon 时，pkg 把 `@img` 目录从 VFS 解到磁盘，dyld 再在该真实路径上跟随 `@rpath`。漏掉这些资源时，磁盘上只有 addon 没有 libvips，宿主在插件初始化期间退出。preset 发现用 `readdir` 名字加 `stat` 列出快照根目录，因为 pkg `--sea` 即使带 `withFileTypes` 也返回字符串（[preset 名单](../bug-fix/2026-08-14-pkg-sea-readdir-returns-names.md)）。App Sandbox 保持关闭。
+`.app` 可以嵌入 `dsh-web-host`，即 web profile 的封闭 `@yao-pkg/pkg --sea` 可执行文件。该产物不是 [`dsh-jsonrpc-agent-pkg`](2026-07-10-single-file-executable-sdk-runtime-distribution.zh.md)：JSON-RPC exe 通过 stdio 启动外部 `cordis.yml`，没有 Host webserver，也没有前端 dist。web-host 的部署根是 [`apps/macos/web-host/package.json`](../../../../apps/macos/web-host/package.json)。其打包入口是 [`apps/cli/src/packaged-bin.ts`](../../../../apps/cli/src/packaged-bin.ts)，它以 `bareModuleBaseUrl` 调用 `runProfile`，使裸插件从 VFS 解析，包括之后对裸包名的 `loader.create`（例如 directory-picker 后端）（[宿主父 URL](../bug-fix/2026-08-14-loader-create-honors-bare-module-base.zh.md)）。client-modules 的 Node 半边在 profile 目录解析不到时，从同一封闭树解析每个 `dsh.client` 的 `package.json`（[宿主包查找](../bug-fix/2026-08-14-client-modules-host-package-resolve.zh.md)）。快照把 sharp 的 libvips 共享库列为 pkg `assets`（`*.dylib`、`*.so`）。`dlopen` 加载 sharp 的 `.node` addon 时，pkg 把 `@img` 目录从 VFS 解到磁盘，dyld 再在该真实路径上跟随 `@rpath`。漏掉这些资源时，磁盘上只有 addon 没有 libvips，宿主在插件初始化期间退出。preset 发现用 `readdir` 名字加 `stat` 列出快照根目录，因为 pkg `--sea` 即使带 `withFileTypes` 也返回字符串（[preset 名单](../bug-fix/2026-08-14-pkg-sea-readdir-returns-names.zh.md)）。App Sandbox 保持关闭。
 
 ## Launch contract
 
@@ -51,7 +51,7 @@ Swift 的 File 菜单 **New Session**（⌘N）、**Add Workspace…**（⌘O，
 
 **让 Swift 使用 ACP 或 SDK JSON-RPC。** 这些协议仅用于自动化，并省略 Web 产品界面。
 
-**加载 `file://` dist 同时调用 HTTP `/api`。** 该文档与 `/api` 跨源，因此特权方法会无法通过[浏览器信任栅栏](2026-07-28-api-browser-trust-boundary.md)。
+**加载 `file://` dist 同时调用 HTTP `/api`。** 该文档与 `/api` 跨源，因此特权方法会无法通过[浏览器信任栅栏](2026-07-28-api-browser-trust-boundary.zh.md)。
 
 **先实现预留的 Electron IPC 载体。** 那与做一个 Electron 壳是同一级 Host 组装工作。要得到一个窗口并不需要它。
 
@@ -75,4 +75,4 @@ Swift 的 File 菜单 **New Session**（⌘N）、**Add Workspace…**（⌘O，
 
 **付出：** Linux CI 无法编译该应用或产出 macos-arm64 exe；损坏的 `project.pbxproj` 只能在 Mac 上发现。JS 命令总线由包测试覆盖；Linux 上没有组装后的 WKWebView 快照。GUI 进程的 `PATH` 很稀疏。login-shell 增补仍可能找不到只存在于非 login rc 文件中的 Node 安装。先预留端口再关闭套接字会留下短暂窗口，其他进程可能抢占该端口；壳报告监听失败，而不是从 stdout 扫描另一个端口。捆绑宿主是封闭插件集：`~/.dsh/profiles/web` 中不在 VFS 里的额外包不会加载。首次打包宿主的 Xcode Run 很慢；之后会复用 `apps/macos/dist/dsh-web-host`，直到删除该文件。
 
-本说明不取代 GUI 分层说明中的 Electron IPC 预留，也不取代 [Client 插件加载](2026-07-23-client-plugin-loading-model.md) 的传输替换席位。它新增一个使用 HTTP 的 `apps/` 组装。[workspace 文件链接](../feature/2026-07-31-web-workspace-file-links.md) 中的 WebView 备注仍关于产品内文件预览，而不是本产品窗口。
+本说明不取代 GUI 分层说明中的 Electron IPC 预留，也不取代 [Client 插件加载](2026-07-23-client-plugin-loading-model.zh.md) 的传输替换席位。它新增一个使用 HTTP 的 `apps/` 组装。[workspace 文件链接](../feature/2026-07-31-web-workspace-file-links.zh.md) 中的 WebView 备注仍关于产品内文件预览，而不是本产品窗口。

@@ -8,7 +8,7 @@ Status: implemented
 
 打包的 `dsh-web-host` 启动之后，WKWebView 显示 **Failed to load plugins** / `@deepseek-ai/dsh-client-app-shell` 因等待 `slots`、`sessions`、`layout` 而 pending。这些服务来自 `dsh-client-ui-session` 与 `dsh-client-ui-layout`，它们是 web bundle 名册里的普通行。宿主进程已起来；浏览器图里没有它们。
 
-client-modules 的 Node 半边用 `createRequire(ctx.baseUrl)` 解析每个 Loader 配置项的 `package.json`——即 profile 目录。封闭打包宿主会跳过 `healProfilesModuleFallback`（[loader.create 宿主父 URL](2026-08-14-loader-create-honors-bare-module-base.md)），而 pkg 也不会从该父 URL 走向 `$DSH_HOME/profiles/node_modules`。`resolveMeta` 把 `MODULE_NOT_FOUND` 当成「不是 client 包」（与 `cordis:include` 同一条路径），于是每个 `dsh.client` 行都从 `window.__DSH_BOOT__` 消失。外壳仍会挂上 app-shell，它会永远等待没有图行会提供的服务。
+client-modules 的 Node 半边用 `createRequire(ctx.baseUrl)` 解析每个 Loader 配置项的 `package.json`——即 profile 目录。封闭打包宿主会跳过 `healProfilesModuleFallback`（[loader.create 宿主父 URL](2026-08-14-loader-create-honors-bare-module-base.zh.md)），而 pkg 也不会从该父 URL 走向 `$DSH_HOME/profiles/node_modules`。`resolveMeta` 把 `MODULE_NOT_FOUND` 当成「不是 client 包」（与 `cordis:include` 同一条路径），于是每个 `dsh.client` 行都从 `window.__DSH_BOOT__` 消失。外壳仍会挂上 app-shell，它会永远等待没有图行会提供的服务。
 
 ## 决定
 

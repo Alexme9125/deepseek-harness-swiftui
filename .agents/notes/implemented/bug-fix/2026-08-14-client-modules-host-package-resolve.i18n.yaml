@@ -3,4 +3,4 @@
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-08-14-client-modules-host-package-resolve.md
 2026-08-14-client-modules-host-package-resolve.md: 626ed0b01cd8ff147a9a8620005189b7d267ee46
-2026-08-14-client-modules-host-package-resolve.zh.md: b3724bbcaab42f5c44ea06c9542dccf96fddfd36
+2026-08-14-client-modules-host-package-resolve.zh.md: 3a7c872b5a3b97eb109c3c19a39083df3a1b379d

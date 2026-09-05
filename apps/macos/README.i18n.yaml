@@ -3,4 +3,4 @@
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write apps/macos/README.md
 README.md: 7982100b3edf82522df1dff754a3d9a7ab261455
-README.zh.md: 37f8f051bf4091f9450f271d72210dc4a856af6b
+README.zh.md: 04c0fef960e59a774f036d1b125e44a3ef00276c
