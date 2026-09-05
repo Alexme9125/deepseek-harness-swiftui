@@ -88,8 +88,8 @@ The File menu sends same-origin commands into the loaded Web client (`dsh-native
 
 | Action | Shortcut | Effect |
 |---|---|---|
-| New Session | ⌘N | `workspaces.startSession()` |
-| Add Workspace… | ⌘O | `NSOpenPanel` (directories only), then `workspaces.create` and `startSession` |
+| New Session | ⌘N | `uiWorkspace.startSession()` |
+| Add Workspace… | ⌘O | `NSOpenPanel` (directories only), then `workspaces.create` and `uiWorkspace.startSession` |
 | Settings… | ⌘, | Opens the existing settings modal |
 
 Dropping a folder on the Dock icon, the window, or a `file://` navigation into the WebView uses the same add-workspace command. The product window restores its last frame from `UserDefaults` when that frame is at least 960×640.

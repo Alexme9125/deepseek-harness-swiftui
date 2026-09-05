@@ -88,8 +88,8 @@ File 菜单向已加载的 Web 客户端发送同源命令（`dsh-native-command
 
 | 操作 | 快捷键 | 效果 |
 |---|---|---|
-| New Session | ⌘N | `workspaces.startSession()` |
-| Add Workspace… | ⌘O | `NSOpenPanel`（仅目录），然后 `workspaces.create` 与 `startSession` |
+| New Session | ⌘N | `uiWorkspace.startSession()` |
+| Add Workspace… | ⌘O | `NSOpenPanel`（仅目录），然后 `workspaces.create` 与 `uiWorkspace.startSession` |
 | Settings… | ⌘, | 打开现有的设置模态 |
 
 把文件夹拖到 Dock 图标、窗口，或把 `file://` 导航送进 WebView，都使用同一条 add-workspace 命令。产品窗口会在上次保存的窗口矩形至少为 960×640 时从 `UserDefaults` 恢复它。
