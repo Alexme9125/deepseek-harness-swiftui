@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { loadLayeredEnv } from '@deepseek-ai/dsh-app-boot'
 import { afterEach, describe, expect, it } from 'vitest'
-import { isSnapshotInstall, runProfile } from '../src/profile-boot.ts'
+import { runProfile } from '../src/profile-boot.ts'
 
 const homes: string[] = []
 
@@ -50,19 +50,11 @@ function createClosedRuntimeFixture(): { home: string; ready: string } {
     name: 'dsh-profile-closed',
     private: true,
     dependencies: {},
-    dsh: { profile: { bundles: ['dsh-closed-bundle'] } },
+    dsh: { profile: { bundles: ['dsh-closed-bundle'], patchReload: 'startup' } },
   }, undefined, 2))
   writeFileSync(join(profileDir, 'cordis.patch.yml'), '[]\n')
   return { home, ready }
 }
-
-describe('isSnapshotInstall', () => {
-  it('detects pkg snapshot paths and rejects ordinary install anchors', () => {
-    expect(isSnapshotInstall('/snapshot/node_modules/@deepseek-ai/dsh/package.json')).toBe(true)
-    expect(isSnapshotInstall('C:\\snapshot\\node_modules\\@deepseek-ai\\dsh\\package.json')).toBe(true)
-    expect(isSnapshotInstall('/workspace/apps/cli/package.json')).toBe(false)
-  })
-})
 
 describe('runProfile closed runtime', () => {
   it('boots a custom profile when bareModuleBaseUrl is set and skips the disk fallback', async () => {

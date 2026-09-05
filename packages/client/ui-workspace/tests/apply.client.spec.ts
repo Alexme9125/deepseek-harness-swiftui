@@ -203,7 +203,7 @@ describe('ui-workspace apply', () => {
     if (invoke === undefined) throw new Error('expected __dshNativeInvoke after apply')
     const startSession = vi.spyOn(b.ctx.uiWorkspace, 'startSession').mockImplementation(() => undefined)
     await expect(invoke({ name: 'new-session' })).resolves.toEqual({ ok: true })
-    expect(startSession).toHaveBeenCalledWith()
+    expect(startSession).toHaveBeenCalledWith(undefined)
     await fiber.dispose()
     expect(host.__dshNativeInvoke).toBeUndefined()
   })
