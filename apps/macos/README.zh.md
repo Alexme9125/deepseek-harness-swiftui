@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-DeepSeek Harness 的 SwiftUI 产品窗口。应用把现有 `web` profile 作为 `127.0.0.1` 上的子进程启动，并在 WKWebView 中加载该源。它不重实现 Web 客户端。决策记录：[SwiftUI macOS 壳](../../.agents/notes/implemented/architecture/2026-08-13-swiftui-mac-shell.md)。
+DeepSeek Harness 的 SwiftUI 产品窗口。应用把现有 `web` profile 作为 `127.0.0.1` 上的子进程启动，并在 WKWebView 中加载该源。它不重实现 Web 客户端。决策记录：[SwiftUI macOS 壳](../../.agents/notes/implemented/architecture/2026-08-13-swiftui-mac-shell.zh.md)。
 
 `.app` 内已构建的 `dsh-web-host` 是 web profile 的封闭 `@yao-pkg/pkg --sea` 可执行文件。它不是 Python SDK 的 JSON-RPC 运行时。当该二进制不存在时，应用回退到本 checkout 的 `dsh` 源码启动，或 PATH 上的 `dsh`。
 
@@ -44,7 +44,7 @@ xcodebuild -scheme DeepSeekHarness -configuration Debug -destination 'platform=m
 xattr -dr com.apple.quarantine /Applications/DeepSeekHarness.app
 ```
 
-本 fork 把该 DMG 发布为 GitHub Release。仍然需要清除 quarantine；该构建未经公证。决策记录：[内部分发](../../.agents/notes/implemented/architecture/2026-08-14-macos-internal-distribution.md)、[GitHub Release DMG](../../.agents/notes/implemented/architecture/2026-08-14-macos-dmg-github-release.md)。
+本 fork 把该 DMG 发布为 GitHub Release。仍然需要清除 quarantine；该构建未经公证。决策记录：[内部分发](../../.agents/notes/implemented/architecture/2026-08-14-macos-internal-distribution.zh.md)、[GitHub Release DMG](../../.agents/notes/implemented/architecture/2026-08-14-macos-dmg-github-release.zh.md)。
 
 ## 应用图标
 
@@ -84,12 +84,12 @@ WebView 打开 `http://127.0.0.1:<n>/`，而不是 `localhost`。退出时发送
 
 ## 原生窗口控件
 
-File 菜单向已加载的 Web 客户端发送同源命令（`dsh-native-command` / `window.__dshNativeInvoke`）。决策记录：[SwiftUI macOS 壳](../../.agents/notes/implemented/architecture/2026-08-13-swiftui-mac-shell.md#native-command-contract)。
+File 菜单向已加载的 Web 客户端发送同源命令（`dsh-native-command` / `window.__dshNativeInvoke`）。决策记录：[SwiftUI macOS 壳](../../.agents/notes/implemented/architecture/2026-08-13-swiftui-mac-shell.zh.md#native-command-contract)。
 
 | 操作 | 快捷键 | 效果 |
 |---|---|---|
-| New Session | ⌘N | `workspaces.startSession()` |
-| Add Workspace… | ⌘O | `NSOpenPanel`（仅目录），然后 `workspaces.create` 与 `startSession` |
+| New Session | ⌘N | `uiWorkspace.startSession()` |
+| Add Workspace… | ⌘O | `NSOpenPanel`（仅目录），然后 `workspaces.create` 与 `uiWorkspace.startSession` |
 | Settings… | ⌘, | 打开现有的设置模态 |
 
 把文件夹拖到 Dock 图标、窗口，或把 `file://` 导航送进 WebView，都使用同一条 add-workspace 命令。产品窗口会在上次保存的窗口矩形至少为 960×640 时从 `UserDefaults` 恢复它。

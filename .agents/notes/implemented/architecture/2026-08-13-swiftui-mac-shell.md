@@ -35,12 +35,12 @@ The Xcode scheme packages `dsh-web-host` on first Run when `apps/macos/dist/dsh-
 
 ## Native command contract
 
-The page global exposes `__dshNativeInvoke(detail)` and listens for `CustomEvent('dsh-native-command', { detail })`. A document-start user script queues invoke calls on `__dshNativeQueue` until [`dsh-client-runtime`](../../../../packages/client/runtime/src/client/native-command.ts) apply replaces the stub. Known `detail.name` values:
+The page global exposes `__dshNativeInvoke(detail)` and listens for `CustomEvent('dsh-native-command', { detail })`. A document-start user script queues invoke calls on `__dshNativeQueue` until [`ui-workspace`](../../../../packages/client/ui-workspace/src/client/native-command.ts) apply replaces the stub. Known `detail.name` values:
 
 | name | Payload | Client effect |
 |---|---|---|
-| `new-session` | none | `workspaces.startSession()` |
-| `add-workspace` | `path` (non-empty string) | `workspaces.create({ path })` then `startSession(workspaceId)` |
+| `new-session` | none | `uiWorkspace.startSession()` |
+| `add-workspace` | `path` (non-empty string) | `workspaces.create({ path })` then `uiWorkspace.startSession(workspaceId)` |
 | `open-settings` | none | SettingsRoot sets its local modal open state |
 
 Swift File menu **New Session** (⌘N), **Add Workspace…** (⌘O, `NSOpenPanel` directories only), **Settings…** (⌘,), Dock / window / `file://` folder drops, and Open With all enqueue those commands. The product window restores a `UserDefaults` frame of at least 960×640. Credentials stay in `$DSH_HOME/.credentials.yaml`.
