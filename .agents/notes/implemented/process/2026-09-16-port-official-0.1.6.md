@@ -10,7 +10,7 @@ This personal fork last tracked official `dsh-v0.1.3-alpha.1` plus a macOS Swift
 
 ## Decision
 
-Merge `deepseek-ai/deepseek-harness` `master` at `0d1f500` (`dsh-v0.1.6-alpha.1` plus follow-up client bootstrap work) into this fork and keep the personal product on the new APIs. The [0.1.3 port](2026-09-05-port-official-0.1.3.md) remains the method: prefer official text on textual conflicts (`-X theirs`), keep `apps/macos/**`, and restore fork-only triggers and the page command bus.
+Merge `deepseek-ai/deepseek-harness` `master` at `dsh-v0.1.6-alpha.1` plus the follow-up client bootstrap work into this fork and keep the personal product on the new APIs. The [0.1.3 port](2026-09-05-port-official-0.1.3.md) remains the method: prefer official text on textual conflicts (`-X theirs`), keep `apps/macos/**`, and restore fork-only triggers and the page command bus.
 
 `dsh-web-host` calls `runProfile` with `resolutionMode: 'runtime'`. Official profile-resolution generations replace the fork's `bareModuleBaseUrl` skip of `healProfilesModuleFallback`. A pkg SEA also sets `process.pkg`, which forces the same mode. The page `dsh-native-command` bus stays on `packages/client/ui-workspace`.
 

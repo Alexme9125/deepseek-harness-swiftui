@@ -10,7 +10,7 @@ Status: implemented
 
 ## 决策
 
-把 `deepseek-ai/deepseek-harness` 的 `master` 在 `0d1f500`（`dsh-v0.1.6-alpha.1` 加上后续客户端启动优化）合入本 fork，并让个人产品走新的 API。[0.1.3 移植](2026-09-05-port-official-0.1.3.zh.md) 仍是方法：文本冲突优先采用官方文本（`-X theirs`），保留 `apps/macos/**`，并恢复 fork 专有触发器与页面命令总线。
+把 `deepseek-ai/deepseek-harness` 的 `master` 在 `dsh-v0.1.6-alpha.1` 加上后续客户端启动优化合入本 fork，并让个人产品走新的 API。[0.1.3 移植](2026-09-05-port-official-0.1.3.zh.md) 仍是方法：文本冲突优先采用官方文本（`-X theirs`），保留 `apps/macos/**`，并恢复 fork 专有触发器与页面命令总线。
 
 `dsh-web-host` 以 `resolutionMode: 'runtime'` 调用 `runProfile`。官方 profile 解析世代取代本 fork 用 `bareModuleBaseUrl` 跳过 `healProfilesModuleFallback` 的做法。pkg SEA 还会设置 `process.pkg`，从而强制同一模式。页面上的 `dsh-native-command` 总线仍在 `packages/client/ui-workspace`。
 
