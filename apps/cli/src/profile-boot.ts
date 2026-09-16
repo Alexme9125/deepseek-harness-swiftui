@@ -290,8 +290,7 @@ function suppressShutdownError(ctx: Context, signal: AbortSignal, error: unknown
 /**
  * Boot one profile invocation end to end and leave process lifetime to the
  * mounted plugins (or to a one-shot runner the composition mounts).
- * @param options - environment snapshot, profile name, overlays, the booted
- *   app's own arguments, and an optional closed-runtime module base.
+ * @param options - environment snapshot, profile name, overlays, and the booted app's own arguments.
  * @returns the settled root context and the shutdown controller.
  */
 export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Context; shutdown: ProcessShutdown }> {
@@ -368,7 +367,7 @@ export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Con
       exit: code => void shutdown.shutdown(code),
       ready: appReady.service,
     })
-  }, options.bareModuleBaseUrl)
+  })
   app.current = ctx
   // A live-reload profile can dispose the whole tree while post-boot watcher
   // setup is in flight — a signal or appExit. Loader presence and fiber state
