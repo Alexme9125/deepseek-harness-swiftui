@@ -1,11 +1,9 @@
 name: weighted-approval
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
-  workflow_run:
-    workflows: [weighted-approval-review-event]
-    types: [completed]
+  # This personal fork starts jobs only on demand. See
+  # .agents/notes/implemented/process/2026-08-19-fork-manual-github-actions.md
+  workflow_dispatch:
 
 permissions:
   contents: read

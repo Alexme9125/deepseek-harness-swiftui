@@ -6,23 +6,8 @@
 name: Node Addon System
 
 on:
-  pull_request:
-    paths:
-      - '.github/workflows/node-addon-system.yml'
-      - '.github/workflows/node-addon-system-release.yml'
-      - 'native/system/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-  push:
-    branches: [master]
-    paths:
-      - '.github/workflows/node-addon-system.yml'
-      - '.github/workflows/node-addon-system-release.yml'
-      - 'native/system/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
+  # This personal fork starts jobs only on demand. See
+  # .agents/notes/implemented/process/2026-08-19-fork-manual-github-actions.md
   workflow_dispatch:
 
 concurrency:

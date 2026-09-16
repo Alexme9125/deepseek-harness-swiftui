@@ -13,7 +13,21 @@ const root = resolve(import.meta.dirname, '..')
 const runnerPrivatePnpmDestination = /^\$\{\{ runner\.temp \}\}\/setup-pnpm-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}$/
 const nativeWindowsPnpmDestination = '${{ runner.temp }}/setup-pnpm-js-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}'
 
+const FORK_ACTIONS_EVENTS = new Set(['workflow_dispatch', 'workflow_call'])
+
 describe('CI workflow', () => {
+  it('subscribes only on-demand GitHub Actions events', () => {
+    const files = readdirSync(resolve(root, '.github/workflows'))
+      .filter(name => name.endsWith('.yml') || name.endsWith('.yaml'))
+      .map(name => `.github/workflows/${name}`)
+    expect(files.length).toBeGreaterThan(0)
+    for (const file of files) {
+      const workflow = loadWorkflow(file)
+      const events = workflowEventNames(workflow)
+      expect(events.every(event => FORK_ACTIONS_EVENTS.has(event)), file).toBe(true)
+    }
+  })
+
   it('prepares confinement before Node compatibility smokes', () => {
     const job = workflowJob(loadWorkflow('.github/workflows/ci.yml'), 'node-compat')
     if (!Array.isArray(job.steps)) throw new TypeError('Node compatibility job must define steps')
@@ -899,9 +913,6 @@ describe('Weighted approval workflow', () => {
   it('publishes from the trusted default branch after pull request and review updates', () => {
     const publisher = loadWorkflow('.github/workflows/weighted-approval.yml')
     const reviewEvent = loadWorkflow('.github/workflows/weighted-approval-review-event.yml')
-    const pullRequest = workflowEvent(publisher, 'pull_request_target')
-    const workflowRun = workflowEvent(publisher, 'workflow_run')
-    const review = workflowEvent(reviewEvent, 'pull_request_review')
     const job = workflowJob(publisher, 'publish-status')
     const recordJob = workflowJob(reviewEvent, 'record-review-event')
     if (!isRecord(publisher.on)) throw new TypeError('weighted-approval workflow must define events')
@@ -915,13 +926,10 @@ describe('Weighted approval workflow', () => {
     const record = recordSteps.find(step => step.name === 'Record review event')
 
     expect(publisher.name).toBe('weighted-approval')
-    expect(Object.keys(publisher.on)).toEqual(['pull_request_target', 'workflow_run'])
-    expect(pullRequest.types).toEqual(['opened', 'synchronize', 'reopened', 'ready_for_review', 'converted_to_draft'])
-    expect(workflowRun).toEqual({ workflows: ['weighted-approval-review-event'], types: ['completed'] })
+    expect(Object.keys(publisher.on)).toEqual(['workflow_dispatch'])
     expect(reviewEvent.name).toBe('weighted-approval-review-event')
     expect(reviewEvent['run-name']).toBe('weighted-approval-review-event:${{ github.event.pull_request.number }}')
-    expect(Object.keys(reviewEvent.on)).toEqual(['pull_request_review'])
-    expect(review.types).toEqual(['submitted', 'edited', 'dismissed'])
+    expect(Object.keys(reviewEvent.on)).toEqual(['workflow_dispatch'])
     expect(reviewEvent.permissions).toEqual({})
     expect(publisher.permissions).toEqual({
       contents: 'read',
@@ -974,36 +982,15 @@ describe('Issue lifecycle workflow', () => {
     const lifecycleJob = workflowJob(lifecycle, 'lifecycle')
     if (!Array.isArray(lifecycleJob.steps)) throw new TypeError('Issue lifecycle job must define steps')
 
-    expect(lifecycle.on).toHaveProperty('pull_request')
-    expect(lifecycle.on).toHaveProperty('pull_request_review')
+    expect(Object.keys(lifecycle.on as Record<string, unknown>)).toEqual(['workflow_dispatch'])
+    expect(Object.keys(policy.on as Record<string, unknown>)).toEqual(['workflow_dispatch'])
     expect(lifecycleJob.if).toContain("github.event.review.state == 'changes_requested'")
     expect(lifecycleJob.if).toContain('github.event.changes.body != null')
-    // Keep the subscription-type gates: issue-lifecycle does not re-subscribe
-    // ready_for_review (issue-policy owns that) and only reacts to submitted
-    // review events.
-    const lifecyclePullRequest = workflowEvent(lifecycle, 'pull_request')
-    const lifecycleReview = workflowEvent(lifecycle, 'pull_request_review')
-    expect(lifecyclePullRequest.types).toContain('opened')
-    expect(lifecyclePullRequest.types).not.toContain('ready_for_review')
-    expect(lifecyclePullRequest.types).toContain('review_requested')
-    expect(lifecycleReview.types).toEqual(['submitted'])
-    expect(lifecyclePullRequest.types).not.toContain('synchronize')
-    expect(lifecyclePullRequest.types).not.toContain('labeled')
-    expect(lifecyclePullRequest.types).not.toContain('unlabeled')
-    const issueEvents = workflowEvent(lifecycle, 'issues')
-    expect(issueEvents.types).not.toContain('assigned')
-    expect(issueEvents.types).not.toContain('unassigned')
-    expect(issueEvents.types).toContain('typed')
-    expect(issueEvents.types).toContain('untyped')
     const steps = lifecycleJob.steps.filter(isRecord)
     const tokenStep = steps.find(s => s.name === 'Create project token')
     const handleStep = steps.find(s => s.name === 'Handle repository event')
     expect(tokenStep?.if).toBeUndefined()
     expect(handleStep?.if).toBeUndefined()
-
-    // issue-policy owns PR validation; it is read-only and a real gate.
-    const policyPullRequest = workflowEvent(policy, 'pull_request')
-    expect(policyPullRequest.types).toContain('ready_for_review')
   })
 
   it('mints Project credentials only after preflight and always revalidates current metadata', () => {

@@ -2,8 +2,9 @@ name: weighted-approval-review-event
 run-name: weighted-approval-review-event:${{ github.event.pull_request.number }}
 
 on:
-  pull_request_review:
-    types: [submitted, edited, dismissed]
+  # This personal fork starts jobs only on demand. See
+  # .agents/notes/implemented/process/2026-08-19-fork-manual-github-actions.md
+  workflow_dispatch:
 
 permissions: {}
 
