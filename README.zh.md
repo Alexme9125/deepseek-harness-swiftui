@@ -8,7 +8,7 @@ Alex（Alex Xiao）是 Darwin 动漫社技术部成员。本仓库是 Alex 的�
 
 它构建于**一切皆插件**的架构之上，由 [Cordis](https://github.com/cordiverse/cordis) 驱动，其设计参见论文 [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512)。
 
-本 fork 增加了一个 SwiftUI macOS 应用：把现有 `web` profile 启动在 `127.0.0.1` 上，并在 WKWebView 中显示同一套 Web UI。`.app` 内捆绑 `dsh-web-host`，因此你不需要系统安装 Node。harness 源码跟踪官方 `dsh-v0.1.3-alpha.1`。
+本 fork 增加了一个 SwiftUI macOS 应用：把现有 `web` profile 启动在 `127.0.0.1` 上，并在 WKWebView 中显示同一套 Web UI。`.app` 内捆绑 `dsh-web-host`，因此你不需要系统安装 Node。harness 源码跟踪官方 `dsh-v0.1.6-alpha.1`。
 
 文档：[https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
@@ -122,6 +122,18 @@ harness 源码是 [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/
 请先阅读[开发指南](docs/development.zh.md)与[架构文档](docs/architecture.zh.md)。
 
 面向 agent：请遵循 [AGENTS.md](AGENTS.md)。
+
+## 引用
+
+```bibtex
+@misc{deepseek-harness2026,
+  title={DeepSeek Harness: Everything is a Plugin},
+  author={DeepSeek-AI},
+  year={2026},
+  publisher={GitHub},
+  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
+}
+```
 
 ## 许可证
 

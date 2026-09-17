@@ -57,7 +57,7 @@ function createClosedRuntimeFixture(): { home: string; ready: string } {
 }
 
 describe('runProfile closed runtime', () => {
-  it('boots a custom profile when bareModuleBaseUrl is set and skips the disk fallback', async () => {
+  it('boots a custom profile in runtime resolution and skips the disk fallback', async () => {
     const fixture = createClosedRuntimeFixture()
     const previousHome = process.env.DSH_HOME
     process.env.DSH_HOME = fixture.home
@@ -68,7 +68,7 @@ describe('runProfile closed runtime', () => {
         profile: 'closed',
         patchFiles: [],
         args: [],
-        bareModuleBaseUrl: import.meta.url,
+        resolutionMode: 'runtime',
       })
       expect(existsSync(fixture.ready)).toBe(true)
       expect(existsSync(join(fixture.home, 'profiles', 'node_modules', '@deepseek-ai'))).toBe(false)

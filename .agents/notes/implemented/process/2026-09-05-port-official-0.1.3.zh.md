@@ -14,7 +14,7 @@ Status: implemented
 
 文本冲突优先采用官方文本（`-X theirs`）。丢掉残留的 `packages/client/runtime` 与已退役的 `knip.json`。
 
-保留 `apps/macos/**`、`apps/cli/src/packaged-bin.ts`、`bin.dsh-web-host` 与 `bareModuleBaseUrl`。该 URL 已设置时，`composeProfile` 跳过 `healProfilesModuleFallback`，因此 `~/.dsh/profiles/web` 下的额外包不会进入 SEA。
+保留 `apps/macos/**`、`apps/cli/src/packaged-bin.ts` 与 `bin.dsh-web-host`。那次合并用 `bareModuleBaseUrl` 跳过 `healProfilesModuleFallback`；[0.1.6 移植](2026-09-16-port-official-0.1.6.zh.md) 现在用 `resolutionMode: 'runtime'` 做同一跳过。
 
 把页面上的 `dsh-native-command` 总线迁到 `packages/client/ui-workspace`（`IWorkspaces.create`、`UiWorkspace.startSession`）。不要从公开的 `/client` barrel 导出它。官方 `@deepseek-ai/dsh-native-command` 包仍是 Host 的免 shell 运行器。
 
@@ -22,7 +22,7 @@ GitHub Actions 只保留 `workflow_dispatch` / `workflow_call`。留下官方的
 
 让 `scripts/verify-runtime-closure.ts` 同时检查 `python/sdk-runtime/package.json` 与 `apps/macos/web-host/package.json`。把宿主 `dependencies` 刷新为官方 `web` 名册（不含 ACP/SDK/webhook 额外项）。
 
-README 仍是 Alex 对 `dsh-v0.1.3-alpha.1` 的个人 SwiftUI 打包说明。
+[0.1.6 移植](2026-09-16-port-official-0.1.6.zh.md) 拥有当前 README 的跟踪行。
 
 ## 曾考虑的替代方案
 
@@ -34,4 +34,4 @@ README 仍是 Alex 对 `dsh-v0.1.3-alpha.1` 的个人 SwiftUI 打包说明。
 
 ## 后果
 
-`SESSION_FORMAT_VERSION` 现在是 `2`。本 fork 在 `0.1.0-rc.5` 时代留下的磁盘会话不保证能加载。打包宿主必须列出官方新增的每个 `web` 插件，否则 `verify-runtime-closure` 失败。手动 `workflow_dispatch` `ci.yml` / `ci-master.yml` 仍会让多数作业空转，因为这些工作流保留官方 `if:` 守卫。[SwiftUI macOS 壳说明](../architecture/2026-08-13-swiftui-mac-shell.zh.md) 保留产品窗口决策；本说明记录该产品如何跟踪官方 `master`。
+那次合并把 `SESSION_FORMAT_VERSION` 发到 `2`。[0.1.6 移植](2026-09-16-port-official-0.1.6.zh.md) 把写入器版本发到 `3`。打包宿主必须列出官方新增的每个 `web` 插件，否则 `verify-runtime-closure` 失败。手动 `workflow_dispatch` `ci.yml` / `ci-master.yml` 仍会让多数作业空转，因为这些工作流保留官方 `if:` 守卫。[SwiftUI macOS 壳说明](../architecture/2026-08-13-swiftui-mac-shell.zh.md) 保留产品窗口决策；后续移植记录该产品如何跟踪官方 `master`。

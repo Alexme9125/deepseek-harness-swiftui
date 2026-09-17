@@ -8,7 +8,7 @@ Alex (Alex Xiao) is a member of the Darwin Anime Club (Darwin 动漫社) technic
 
 It is built on an **everything-is-a-plugin** architecture and powered by [Cordis](https://github.com/cordiverse/cordis), whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512).
 
-This fork adds a SwiftUI macOS app that launches the existing `web` profile on `127.0.0.1` and shows that Web UI in WKWebView. The `.app` bundles `dsh-web-host`, so you do not need a system Node install. The harness source tracks official `dsh-v0.1.3-alpha.1`.
+This fork adds a SwiftUI macOS app that launches the existing `web` profile on `127.0.0.1` and shows that Web UI in WKWebView. The `.app` bundles `dsh-web-host`, so you do not need a system Node install. The harness source tracks official `dsh-v0.1.6-alpha.1`.
 
 Documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
@@ -105,6 +105,18 @@ Upstream community channels and contribution policy remain on the [upstream repo
 Start with the [development guide](docs/development.md) and [architecture documentation](docs/architecture.md).
 
 For agents, follow [AGENTS.md](AGENTS.md).
+
+## Citation
+
+```bibtex
+@misc{deepseek-harness2026,
+  title={DeepSeek Harness: Everything is a Plugin},
+  author={DeepSeek-AI},
+  year={2026},
+  publisher={GitHub},
+  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
+}
+```
 
 ## License
 

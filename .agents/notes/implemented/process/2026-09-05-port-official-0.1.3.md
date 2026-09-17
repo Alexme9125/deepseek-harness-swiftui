@@ -14,7 +14,7 @@ Merge `deepseek-ai/deepseek-harness` `master` at `dsh-v0.1.3-alpha.1` into this 
 
 Prefer official text on textual conflicts (`-X theirs`). Drop leftover `packages/client/runtime` and the retired `knip.json`.
 
-Keep `apps/macos/**`, `apps/cli/src/packaged-bin.ts`, `bin.dsh-web-host`, and `bareModuleBaseUrl`. When that URL is set, `composeProfile` skips `healProfilesModuleFallback` so extra `~/.dsh/profiles/web` packages stay out of the SEA.
+Keep `apps/macos/**`, `apps/cli/src/packaged-bin.ts`, and `bin.dsh-web-host`. That merge skipped `healProfilesModuleFallback` via `bareModuleBaseUrl`; the [0.1.6 port](2026-09-16-port-official-0.1.6.md) now does the same skip with `resolutionMode: 'runtime'`.
 
 Rehome the page `dsh-native-command` bus on `packages/client/ui-workspace` (`IWorkspaces.create`, `UiWorkspace.startSession`). Do not export it from the public `/client` barrel. The official `@deepseek-ai/dsh-native-command` package remains the Host no-shell runner.
 
@@ -22,7 +22,7 @@ Keep GitHub Actions as `workflow_dispatch` / `workflow_call` only. Leave officia
 
 Point `scripts/verify-runtime-closure.ts` at both `python/sdk-runtime/package.json` and `apps/macos/web-host/package.json`. Refresh the host `dependencies` to the official `web` roster (no ACP/SDK/webhook extras).
 
-Keep the README as Alex's personal SwiftUI packaging of `dsh-v0.1.3-alpha.1`.
+The [0.1.6 port](2026-09-16-port-official-0.1.6.md) owns the current README tracking line.
 
 ## Alternatives considered
 
@@ -34,4 +34,4 @@ Keep the README as Alex's personal SwiftUI packaging of `dsh-v0.1.3-alpha.1`.
 
 ## Consequences
 
-`SESSION_FORMAT_VERSION` is now `2`. Old on-disk sessions from this fork's `0.1.0-rc.5` era are not promised to load. The packaged host must list every `web` plugin official adds, or `verify-runtime-closure` fails. Manual `workflow_dispatch` of `ci.yml` / `ci-master.yml` still no-ops most jobs because those workflows keep official `if:` guards. The [SwiftUI macOS shell note](../architecture/2026-08-13-swiftui-mac-shell.md) keeps the product-window decision; this note records how that product tracks official `master`.
+`SESSION_FORMAT_VERSION` shipped as `2` on that merge. The [0.1.6 port](2026-09-16-port-official-0.1.6.md) ships writer version `3`. The packaged host must list every `web` plugin official adds, or `verify-runtime-closure` fails. Manual `workflow_dispatch` of `ci.yml` / `ci-master.yml` still no-ops most jobs because those workflows keep official `if:` guards. The [SwiftUI macOS shell note](../architecture/2026-08-13-swiftui-mac-shell.md) keeps the product-window decision; later ports record how that product tracks official `master`.
